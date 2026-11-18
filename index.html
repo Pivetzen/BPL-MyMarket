@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Lista de Compras</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 pb-32 select-none">
+
+  <!-- TELA DE LOGIN -->
+  <div id="screen-login" class="min-h-screen flex flex-col justify-center p-5 max-w-md mx-auto">
+    <div class="bg-white rounded-3xl shadow-md p-6 border border-slate-200">
+      <div class="w-14 h-14 bg-emerald-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl">
+        <i class="fa-solid fa-cart-shopping"></i>
+      </div>
+      <h1 class="text-xl font-bold text-center text-slate-900">Acesso ao Sistema</h1>
+      <p class="text-xs text-center text-slate-500 mb-6">Entre com seu usuário e senha cadastrados</p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-600 block mb-1">Usuário</label>
+          <input type="text" id="login-user" placeholder="Ex: matheus" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-600 block mb-1">Senha</label>
+          <input type="password" id="login-pass" placeholder="••••" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600">
+        </div>
+        <button onclick="fazerLogin()" id="btn-login" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-sm active:scale-95 transition mt-2">
+          Entrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TELA PRINCIPAL -->
+  <div id="screen-app" class="hidden max-w-lg mx-auto">
+    <!-- TOPO -->
+    <header class="bg-slate-900 text-white p-4 sticky top-0 z-20 shadow">
+      <div class="flex justify-between items-center">
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="header-user" class="font-bold text-base">---</span>
+            <span id="header-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500 text-white uppercase">---</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Sincronizado com a planilha</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="carregarDados(true)" id="btn-refresh" class="w-9 h-9 bg-slate-800 rounded-xl flex items-center justify-center active:scale-90">
+            <i class="fa-solid fa-rotate text-sm"></i>
+          </button>
+          <button onclick="logout()" class="w-9 h-9 bg-slate-800 rounded-xl flex items-center justify-center active:scale-90 text-red-400">
+            <i class="fa-solid fa-right-from-bracket text-sm"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- MENU DE NAVEGAÇÃO EXCLUSIVO DO ADMIN -->
+      <div id="admin-tabs" class="hidden grid grid-cols-3 gap-1.5 mt-3 pt-3 border-t border-slate-800">
+        <button onclick="mudarAbaAdmin('USER')" id="tab-USER" class="py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white">Compras (User)</button>
+        <button onclick="mudarAbaAdmin('PLANNER')" id="tab-PLANNER" class="py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300">Criar (Planner)</button>
+        <button onclick="mudarAbaAdmin('ADMIN')" id="tab-ADMIN" class="py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300">Usuários</button>
+      </div>
+    </header>
+
+    <!-- ========================================== -->
+    <!-- VISÃO 1: ADMIN (CONTROLE DE ACESSOS)       -->
+    <!-- ========================================== -->
+    <section id="view-ADMIN" class="hidden p-4 space-y-4">
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="font-bold text-sm text-slate-800 mb-3"><i class="fa-solid fa-user-plus text-emerald-600 mr-1"></i> Cadastrar / Editar Usuário</h2>
+        <div class="grid grid-cols-2 gap-2.5 mb-2.5">
+          <input type="text" id="adm-login" placeholder="Usuário (ex: rayssa)" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
+          <input type="text" id="adm-senha" placeholder="Senha" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
+        </div>
+        <div class="grid grid-cols-2 gap-2.5 mb-3">
+          <select id="adm-perfil" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm font-semibold">
+            <option value="USER">Perfil: USER (Comprador)</option>
+            <option value="PLANNER">Perfil: PLANNER (Criador)</option>
+            <option value="ADMIN">Perfil: ADMIN (Total)</option>
+          </select>
+          <input type="tel" id="adm-whats" placeholder="WhatsApp (55859...)" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
+        </div>
+        <div class="flex items-center justify-between">
+          <label class="flex items-center gap-2 text-xs font-semibold text-slate-700">
+            <input type="checkbox" id="adm-ativo" checked class="w-4 h-4 accent-emerald-600"> Acesso Liberado
+          </label>
+          <button onclick="salvarUsuario()" class="bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl active:scale-95">
+            Salvar Usuário
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+        <h3 class="font-bold text-xs uppercase text-slate-400 mb-3">Usuários Cadastrados</h3>
+        <div id="lista-usuarios" class="divide-y divide-slate-100"></div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VISÃO 2: PLANNER (CRIAÇÃO DA LISTA)        -->
+    <!-- ========================================== -->
+    <section id="view-PLANNER" class="hidden p-4 space-y-4">
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="font-bold text-sm text-slate-800 mb-3"><i class="fa-solid fa-pen-to-square text-emerald-600 mr-1"></i> Adicionar Item à Lista</h2>
+        
+        <div class="space-y-2.5">
+          <input type="text" id="plan-produto" placeholder="Nome do produto (ex: Café Pilão 500g)" class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="text-[11px] font-bold text-slate-500 block mb-1">Qtd. Desejada</label>
+              <input type="number" id="plan-qtd" value="1" min="1" class="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold text-center">
+            </div>
+            <div>
+              <label class="text-[11px] font-bold text-slate-500 block mb-1">Valor Unit. Estimado</label>
+              <input type="text" id="plan-valor" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoeda(this)" class="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold text-right text-emerald-700">
+            </div>
+          </div>
+
+          <button onclick="adicionarItemPlanner()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-sm active:scale-95 transition text-sm">
+            <i class="fa-solid fa-plus mr-1"></i> Incluir na Lista
+          </button>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center px-1">
+        <h3 class="text-xs font-bold uppercase text-slate-500">Itens na Lista (<span id="plan-count">0</span>)</h3>
+        <button onclick="limparListaCompleta()" class="text-xs text-red-600 font-semibold hover:underline">
+          <i class="fa-solid fa-trash-can mr-1"></i> Zerar Lista
+        </button>
+      </div>
+
+      <div id="planner-lista-itens" class="space-y-2"></div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VISÃO 3: USER (COMPRAS NO SUPERMERCADO)    -->
+    <!-- ========================================== -->
+    <section id="view-USER" class="hidden p-4 space-y-5">
+      <!-- Lista Principal (Pendentes) -->
+      <div>
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">
+          Para Comprar (<span id="user-count-pendentes">0</span>)
+        </h2>
+        <div id="user-lista-pendentes" class="space-y-2.5"></div>
+      </div>
+
+      <!-- Itens Já Confirmados -->
+      <div id="box-confirmados" class="hidden">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-2.5">
+          Confirmados no Carrinho (<span id="user-count-confirmados">0</span>)
+        </h2>
+        <div id="user-lista-confirmados" class="space-y-2"></div>
+      </div>
+
+      <!-- Lista de Faltantes -->
+      <div id="box-faltando" class="hidden">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-red-600 mb-2.5">
+          Em Falta no Mercado (<span id="user-count-faltando">0</span>)
+        </h2>
+        <div id="user-lista-faltando" class="space-y-2"></div>
+      </div>
+    </section>
+
+    <!-- RODAPÉ DE TOTAIS (VISÍVEL NO MODO USER E PLANNER) -->
+    <footer id="footer-totais" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3.5 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] z-20">
+      <div class="max-w-lg mx-auto flex justify-between items-center">
+        <div>
+          <span class="text-[11px] text-slate-400 block">Estimado (Lista)</span>
+          <span id="total-estimado" class="text-sm font-bold text-slate-600">R$ 0,00</span>
+        </div>
+        <div class="text-right">
+          <span class="text-[11px] text-slate-500 block">Total Confirmado</span>
+          <span id="total-real" class="text-2xl font-black text-emerald-600">R$ 0,00</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- MODAL DE CONFIRMAÇÃO DE COMPRA (USER) -->
+  <div id="modal-confirmar" class="hidden fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl p-5">
+      <div class="flex justify-between items-start mb-2">
+        <div>
+          <span class="text-[10px] font-bold uppercase text-emerald-600">Confirmar Item</span>
+          <h3 id="modal-prod-nome" class="text-lg font-bold text-slate-900">---</h3>
+        </div>
+        <button onclick="fecharModal()" class="text-slate-400 text-2xl leading-none">&times;</button>
+      </div>
+
+      <p id="modal-valor-esperado" class="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-3 py-2 rounded-xl mb-4">
+        Valor estimado pelo Planner: <b>R$ 0,00</b>
+      </p>
+
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="text-xs font-bold text-slate-600 block mb-1">Qtd. Pega</label>
+          <input type="number" id="modal-qtd" min="1" class="w-full bg-slate-100 rounded-xl p-3 text-center font-bold text-lg">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-600 block mb-1">Preço Unitário Real</label>
+          <input type="text" id="modal-preco" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoeda(this)" class="w-full bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl p-3 text-right font-bold text-lg focus:outline-none">
+        </div>
+      </div>
+
+      <button onclick="salvarConfirmacao()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl shadow active:scale-95 transition">
+        <i class="fa-solid fa-check mr-1"></i> Confirmar no Carrinho
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // COLE A URL DO SEU GOOGLE APPS SCRIPT AQUI
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyTwX-ffOMTcifI5ODPkOcUK3oT5SUu_nCbk6qOjshmwcnd6vxM_MeIknWS5EbnYeLj/exec';
+
+    let usuarioLogado = null;
+    let itens = [];
+    let usuarios = [];
+    let itemAtualModal = null;
+
+    window.onload = () => {
+      const saved = localStorage.getItem('mercado_user_session');
+      if (saved) {
+        usuarioLogado = JSON.parse(saved);
+        iniciarInterface();
+      }
+    };
+
+    async function fazerLogin() {
+      const login = document.getElementById('login-user').value.trim();
+      const senha = document.getElementById('login-pass').value.trim();
+      if (!login || !senha) return alert('Preencha usuário e senha.');
+
+      const btn = document.getElementById('btn-login');
+      btn.innerText = 'Verificando...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_URL}?action=login&login=${encodeURIComponent(login)}&senha=${encodeURIComponent(senha)}`);
+        const data = await res.json();
+        if (data.status === 'ok') {
+          usuarioLogado = data.user;
+          localStorage.setItem('mercado_user_session', JSON.stringify(usuarioLogado));
+          iniciarInterface();
+        } else {
+          alert(data.message);
+        }
+      } catch (e) {
+        alert('Erro de conexão com a planilha.');
+      } finally {
+        btn.innerText = 'Entrar';
+        btn.disabled = false;
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('mercado_user_session');
+      usuarioLogado = null;
+      document.getElementById('screen-app').classList.add('hidden');
+      document.getElementById('screen-login').classList.remove('hidden');
+    }
+
+    function iniciarInterface() {
+      document.getElementById('screen-login').classList.add('hidden');
+      document.getElementById('screen-app').classList.remove('hidden');
+      document.getElementById('header-user').innerText = usuarioLogado.login;
+      document.getElementById('header-badge').innerText = usuarioLogado.perfil;
+
+      if (usuarioLogado.perfil === 'ADMIN') {
+        document.getElementById('admin-tabs').classList.remove('hidden');
+        mudarAbaAdmin('USER');
+      } else {
+        document.getElementById('admin-tabs').classList.add('hidden');
+        exibirView(usuarioLogado.perfil);
+      }
+
+      carregarDados(true);
+    }
+
+    function mudarAbaAdmin(aba) {
+      ['USER', 'PLANNER', 'ADMIN'].forEach(t => {
+        const btn = document.getElementById(`tab-${t}`);
+        btn.className = t === aba
+          ? 'py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white'
+          : 'py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300';
+      });
+      exibirView(aba);
+    }
+
+    function exibirView(perfil) {
+      document.getElementById('view-ADMIN').classList.add('hidden');
+      document.getElementById('view-PLANNER').classList.add('hidden');
+      document.getElementById('view-USER').classList.add('hidden');
+
+      document.getElementById(`view-${perfil}`).classList.remove('hidden');
+      document.getElementById('footer-totais').classList.toggle('hidden', perfil === 'ADMIN');
+    }
+
+    async function carregarDados(animar = false) {
+      const icon = document.querySelector('#btn-refresh i');
+      if (animar) icon.classList.add('fa-spin');
+
+      try {
+        const res = await fetch(`${API_URL}?action=get_all`);
+        const data = await res.json();
+        if (data.status === 'ok') {
+          itens = data.itens;
+          usuarios = data.usuarios;
+          renderizarTudo();
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (animar) icon.classList.remove('fa-spin');
+      }
+    }
+
+    function renderizarTudo() {
+      renderizarAdmin();
+      renderizarPlanner();
+      renderizarUser();
+      atualizarTotais();
+    }
+
+    // ================= ADMIN =================
+    function renderizarAdmin() {
+      const container = document.getElementById('lista-usuarios');
+      container.innerHTML = '';
+      usuarios.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'py-2.5 flex justify-between items-center';
+        div.innerHTML = `
+          <div>
+            <p class="font-bold text-sm text-slate-800">${u.login} <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">${u.perfil}</span></p>
+            <p class="text-xs text-slate-400">WhatsApp: ${u.whatsapp || 'Não inf.'} • ${u.ativo ? '<span class="text-emerald-600 font-bold">Ativo</span>' : '<span class="text-red-500 font-bold">Bloqueado</span>'}</p>
+          </div>
+          <button onclick='preencherFormAdmin(${JSON.stringify(u)})' class="text-xs bg-slate-100 px-3 py-1.5 rounded-lg font-semibold text-slate-700">Editar</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function preencherFormAdmin(u) {
+      document.getElementById('adm-login').value = u.login;
+      document.getElementById('adm-senha').value = u.senha;
+      document.getElementById('adm-perfil').value = u.perfil;
+      document.getElementById('adm-whats').value = u.whatsapp;
+      document.getElementById('adm-ativo').checked = u.ativo;
+    }
+
+    async function salvarUsuario() {
+      const payload = {
+        action: 'save_user',
+        login: document.getElementById('adm-login').value.trim(),
+        senha: document.getElementById('adm-senha').value.trim(),
+        perfil: document.getElementById('adm-perfil').value,
+        whatsapp: document.getElementById('adm-whats').value.replace(/\D/g, ''),
+        ativo: document.getElementById('adm-ativo').checked
+      };
+      if (!payload.login || !payload.senha) return alert('Informe usuário e senha.');
+
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+      document.getElementById('adm-login').value = '';
+      document.getElementById('adm-senha').value = '';
+      document.getElementById('adm-whats').value = '';
+      carregarDados(true);
+    }
+
+    // ================= PLANNER =================
+    async function adicionarItemPlanner() {
+      const produto = document.getElementById('plan-produto').value.trim();
+      const qtd = parseInt(document.getElementById('plan-qtd').value) || 1;
+      const valor = lerMoeda(document.getElementById('plan-valor').value);
+
+      if (!produto) return alert('Digite o nome do produto.');
+
+      const novoItem = {
+        action: 'add_item',
+        id: Date.now().toString(),
+        produto,
+        qtd_planejada: qtd,
+        valor_estimado: valor,
+        planner_whatsapp: usuarioLogado.whatsapp || '',
+        planner_nome: usuarioLogado.login
+      };
+
+      itens.push({ ...novoItem, status: 'PENDENTE', qtd_comprada: 0, preco_real: 0 });
+      document.getElementById('plan-produto').value = '';
+      document.getElementById('plan-qtd').value = 1;
+      document.getElementById('plan-valor').value = '';
+      renderizarTudo();
+
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify(novoItem) });
+    }
+
+    function renderizarPlanner() {
+      const container = document.getElementById('planner-lista-itens');
+      container.innerHTML = '';
+      document.getElementById('plan-count').innerText = itens.length;
+
+      itens.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center';
+        div.innerHTML = `
+          <div>
+            <p class="font-bold text-sm text-slate-800">${item.produto}</p>
+            <p class="text-xs text-slate-500">Qtd: <b>${item.qtd_planejada}</b> • Estimado: <b>${formatarMoeda(item.valor_estimado)}</b>/un</p>
+          </div>
+          <button onclick="removerItem('${item.id}')" class="text-red-500 w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+            <i class="fa-solid fa-trash text-xs"></i>
+          </button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function removerItem(id) {
+      itens = itens.filter(i => i.id !== id);
+      renderizarTudo();
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_item', id }) });
+    }
+
+    async function limparListaCompleta() {
+      if (!confirm('Apagar todos os itens da lista?')) return;
+      itens = [];
+      renderizarTudo();
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'limpar_lista' }) });
+    }
+
+    // ================= USER (COMPRADOR) =================
+    function renderizarUser() {
+      const pendentes = itens.filter(i => i.status === 'PENDENTE');
+      const confirmados = itens.filter(i => i.status === 'CONFIRMADO');
+      const faltando = itens.filter(i => i.status === 'FALTANDO');
+
+      document.getElementById('user-count-pendentes').innerText = pendentes.length;
+      document.getElementById('user-count-confirmados').innerText = confirmados.length;
+      document.getElementById('user-count-faltando').innerText = faltando.length;
+
+      document.getElementById('box-confirmados').classList.toggle('hidden', confirmados.length === 0);
+      document.getElementById('box-faltando').classList.toggle('hidden', faltando.length === 0);
+
+      // Renderizar Pendentes com os 3 botões solicitados
+      const divPend = document.getElementById('user-lista-pendentes');
+      divPend.innerHTML = pendentes.length === 0 ? '<p class="text-xs text-slate-400 bg-white p-4 rounded-xl text-center">Nenhum item pendente na lista.</p>' : '';
+
+      pendentes.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200';
+        card.innerHTML = `
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h3 class="font-bold text-base text-slate-900 leading-tight">${item.produto}</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Solicitado: <b>${item.qtd_planejada} un</b></p>
+            </div>
+            <div class="text-right bg-slate-100 px-2.5 py-1 rounded-lg">
+              <span class="text-[10px] text-slate-500 block">Valor Estimado</span>
+              <span class="text-xs font-extrabold text-slate-800">${formatarMoeda(item.valor_estimado)}</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1.5">
+            <button onclick='abrirModalConfirmar(${JSON.stringify(item)})' class="bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-95 transition flex items-center justify-center gap-1">
+              <i class="fa-solid fa-check"></i> CONFIRMAR
+            </button>
+            <button onclick="marcarFaltando('${item.id}')" class="bg-red-50 text-red-600 border border-red-200 font-bold py-2.5 rounded-xl text-xs active:scale-95 transition flex items-center justify-center gap-1">
+              <i class="fa-solid fa-xmark"></i> FALTANDO
+            </button>
+            <button onclick='pedirFotoWhatsApp(${JSON.stringify(item)})' class="bg-sky-50 text-sky-700 border border-sky-200 font-bold py-2.5 rounded-xl text-xs active:scale-95 transition flex items-center justify-center gap-1">
+              <i class="fa-brands fa-whatsapp"></i> PEDIR FOTO
+            </button>
+          </div>
+        `;
+        divPend.appendChild(card);
+      });
+
+      // Renderizar Confirmados
+      const divConf = document.getElementById('user-lista-confirmados');
+      divConf.innerHTML = '';
+      confirmados.forEach(item => {
+        const sub = item.qtd_comprada * item.preco_real;
+        const card = document.createElement('div');
+        card.className = 'bg-emerald-50/70 p-3 rounded-xl border border-emerald-200 flex justify-between items-center';
+        card.innerHTML = `
+          <div>
+            <p class="font-bold text-sm text-emerald-950">${item.produto}</p>
+            <p class="text-xs text-emerald-700">${item.qtd_comprada} un × ${formatarMoeda(item.preco_real)} = <b>${formatarMoeda(sub)}</b></p>
+          </div>
+          <button onclick="voltarParaPendente('${item.id}')" class="text-[11px] bg-white border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded-lg font-semibold">Desfazer</button>
+        `;
+        divConf.appendChild(card);
+      });
+
+      // Renderizar Faltantes (não contabiliza quantidade ou valor)
+      const divFalt = document.getElementById('user-lista-faltando');
+      divFalt.innerHTML = '';
+      faltando.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'bg-red-50/60 p-3 rounded-xl border border-red-200 flex justify-between items-center';
+        card.innerHTML = `
+          <div>
+            <p class="font-bold text-sm text-red-900 line-through">${item.produto}</p>
+            <p class="text-[11px] text-red-600">Item em falta (não contabilizado)</p>
+          </div>
+          <button onclick="voltarParaPendente('${item.id}')" class="text-[11px] bg-white border border-red-200 text-red-700 px-2.5 py-1 rounded-lg font-semibold">Voltar</button>
+        `;
+        divFalt.appendChild(card);
+      });
+    }
+
+    function abrirModalConfirmar(item) {
+      itemAtualModal = item;
+      document.getElementById('modal-prod-nome').innerText = item.produto;
+      document.getElementById('modal-valor-esperado').innerHTML = `Valor unitário esperado pelo Planner: <b>${formatarMoeda(item.valor_estimado)}</b>`;
+      document.getElementById('modal-qtd').value = item.qtd_planejada;
+      document.getElementById('modal-preco').value = '';
+      document.getElementById('modal-confirmar').classList.remove('hidden');
+      setTimeout(() => document.getElementById('modal-preco').focus(), 100);
+    }
+
+    function fecharModal() {
+      document.getElementById('modal-confirmar').classList.add('hidden');
+      itemAtualModal = null;
+    }
+
+    async function salvarConfirmacao() {
+      if (!itemAtualModal) return;
+      const qtd = parseInt(document.getElementById('modal-qtd').value) || 1;
+      const preco = lerMoeda(document.getElementById('modal-preco').value);
+
+      itemAtualModal.status = 'CONFIRMADO';
+      itemAtualModal.qtd_comprada = qtd;
+      itemAtualModal.preco_real = preco;
+
+      const id = itemAtualModal.id;
+      fecharModal();
+      renderizarTudo();
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'update_item_status', id, status: 'CONFIRMADO', qtd_comprada: qtd, preco_real: preco })
+      });
+    }
+
+    async function marcarFaltando(id) {
+      const item = itens.find(i => i.id === id);
+      if (!item) return;
+      item.status = 'FALTANDO';
+      item.qtd_comprada = 0;
+      item.preco_real = 0;
+      renderizarTudo();
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'update_item_status', id, status: 'FALTANDO', qtd_comprada: 0, preco_real: 0 })
+      });
+    }
+
+    async function voltarParaPendente(id) {
+      const item = itens.find(i => i.id === id);
+      if (!item) return;
+      item.status = 'PENDENTE';
+      item.qtd_comprada = 0;
+      item.preco_real = 0;
+      renderizarTudo();
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'update_item_status', id, status: 'PENDENTE', qtd_comprada: 0, preco_real: 0 })
+      });
+    }
+
+    function pedirFotoWhatsApp(item) {
+      // Busca o WhatsApp do Planner que criou o item (ou de qualquer Planner cadastrado)
+      let fone = item.planner_whatsapp;
+      if (!fone) {
+        const planner = usuarios.find(u => u.perfil === 'PLANNER' && u.whatsapp);
+        if (planner) fone = planner.whatsapp;
+      }
+      if (!fone) return alert('O Planner não possui WhatsApp cadastrado no sistema.');
+
+      const mensagem = `não encontrei o produto ${item.produto}, pode me mandar uma foto?`;
+      window.open(`https://wa.me/${fone}?text=${encodeURIComponent(mensagem)}`, '_blank');
+    }
+
+    function atualizarTotais() {
+      let totalEstimado = 0;
+      let totalReal = 0;
+
+      itens.forEach(item => {
+        if (item.status !== 'FALTANDO') {
+          totalEstimado += (item.qtd_planejada * item.valor_estimado);
+        }
+        if (item.status === 'CONFIRMADO') {
+          totalReal += (item.qtd_comprada * item.preco_real);
+        }
+      });
+
+      document.getElementById('total-estimado').innerText = formatarMoeda(totalEstimado);
+      document.getElementById('total-real').innerText = formatarMoeda(totalReal);
+    }
+
+    // Utilitários de Moeda
+    function mascaraMoeda(input) {
+      let v = input.value.replace(/\D/g, '');
+      v = (v / 100).toFixed(2) + '';
+      v = v.replace('.', ',');
+      v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+      input.value = 'R$ ' + v;
+    }
+
+    function lerMoeda(str) {
+      const num = str.replace(/\D/g, '');
+      return (parseInt(num) || 0) / 100;
+    }
+
+    function formatarMoeda(val) {
+      return (val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+  </script>
+</body>
+</html>

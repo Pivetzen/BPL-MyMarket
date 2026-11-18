@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Lista de Compras Vinculada</title>
+  <title>Lista de Compras por Vínculo</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -19,7 +19,7 @@
         <i class="fa-solid fa-cart-shopping"></i>
       </div>
       <h1 class="text-xl font-bold text-center text-slate-900">Acesso Restrito</h1>
-      <p class="text-xs text-center text-slate-500 mb-6">Listas vinculadas por usuário</p>
+      <p class="text-xs text-center text-slate-500 mb-6">Listas com vínculo Planner ⇄ User</p>
 
       <div class="space-y-3">
         <div>
@@ -70,16 +70,20 @@
       <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
         <h2 class="font-bold text-sm text-slate-800 mb-3"><i class="fa-solid fa-user-plus text-emerald-600 mr-1"></i> Cadastrar / Editar Usuário</h2>
         <div class="grid grid-cols-2 gap-2.5 mb-2.5">
-          <input type="text" id="adm-login" placeholder="Usuário (ex: matheus)" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
+          <input type="text" id="adm-login" placeholder="Usuário (ex: rayssa)" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
           <input type="text" id="adm-senha" placeholder="Senha" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
         </div>
-        <div class="grid grid-cols-2 gap-2.5 mb-3">
+        <div class="grid grid-cols-2 gap-2.5 mb-2.5">
           <select id="adm-perfil" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm font-semibold">
             <option value="USER">USER (Comprador)</option>
             <option value="PLANNER">PLANNER (Criador)</option>
             <option value="ADMIN">ADMIN (Total)</option>
           </select>
           <input type="tel" id="adm-whats" placeholder="WhatsApp (55859...)" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
+        </div>
+        <div class="mb-3">
+          <label class="text-[11px] font-bold text-slate-500 block mb-1">Planners Vinculados (se for USER, separe por vírgula se houver mais de um):</label>
+          <input type="text" id="adm-vinculados" placeholder="Ex: matheus, outroplanner" class="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
         </div>
         <div class="flex items-center justify-between">
           <label class="flex items-center gap-2 text-xs font-semibold text-slate-700">
@@ -97,17 +101,17 @@
     <!-- PLANNER -->
     <section id="view-PLANNER" class="hidden p-4 space-y-4">
       <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-        <h2 class="font-bold text-sm text-slate-800 mb-3"><i class="fa-solid fa-pen-to-square text-emerald-600 mr-1"></i> Criar Item para Comprador</h2>
+        <h2 class="font-bold text-sm text-slate-800 mb-3"><i class="fa-solid fa-pen-to-square text-emerald-600 mr-1"></i> Criar Item para Comprador Vinculado</h2>
         
         <div class="space-y-3">
           <div>
-            <label class="text-[11px] font-bold text-slate-500 block mb-1">Direcionar para o Comprador (User):</label>
+            <label class="text-[11px] font-bold text-slate-500 block mb-1">Selecionar Comprador (Vinculado a você):</label>
             <select id="plan-comprador-alvo" class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500">
-              <!-- Preenchido via JS com usuários do tipo USER -->
+              <!-- Preenchido via JS apenas com usuários vinculados a este planner -->
             </select>
           </div>
 
-          <input type="text" id="plan-produto" placeholder="Nome do produto (ex: Leite Integral)" class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 text-sm">
+          <input type="text" id="plan-produto" placeholder="Nome do produto (ex: Feijão Carioca)" class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 text-sm">
           
           <div class="grid grid-cols-2 gap-2.5">
             <div>
@@ -121,7 +125,7 @@
           </div>
 
           <button onclick="adicionarItemPlanner()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-sm active:scale-95 transition text-sm">
-            <i class="fa-solid fa-plus mr-1"></i> Incluir na Lista do Comprador
+            <i class="fa-solid fa-plus mr-1"></i> Incluir na Lista
           </button>
         </div>
       </div>
@@ -319,13 +323,20 @@
       const valorAtual = select.value;
       select.innerHTML = '';
       
-      const apenasUsers = usuarios.filter(u => u.perfil === 'USER' && u.ativo);
-      if (apenasUsers.length === 0) {
-        select.innerHTML = '<option value="">Nenhum usuário tipo USER ativo</option>';
+      // Filtra apenas usuários USER ativos que tenham o planner logado nos seus "vinculados"
+      const meuLogin = usuarioLogado.login.toLowerCase();
+      const usuariosVinculados = usuarios.filter(u => 
+        u.perfil === 'USER' && 
+        u.ativo && 
+        u.vinculados.includes(meuLogin)
+      );
+
+      if (usuariosVinculados.length === 0) {
+        select.innerHTML = '<option value="">Nenhum comprador vinculado a você</option>';
         return;
       }
 
-      apenasUsers.forEach(u => {
+      usuariosVinculados.forEach(u => {
         const opt = document.createElement('option');
         opt.value = u.login.toLowerCase();
         opt.innerText = u.login;
@@ -351,7 +362,7 @@
         div.innerHTML = `
           <div>
             <p class="font-bold text-sm text-slate-800">${u.login} <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">${u.perfil}</span></p>
-            <p class="text-xs text-slate-400">WhatsApp: ${u.whatsapp || 'Não inf.'} • ${u.ativo ? '<span class="text-emerald-600 font-bold">Ativo</span>' : '<span class="text-red-500 font-bold">Bloqueado</span>'}</p>
+            <p class="text-xs text-slate-400">Whats: ${u.whatsapp || '---'} • Vínculos: <b>${u.vinculados.join(', ') || 'Nenhum'}</b> • ${u.ativo ? '<span class="text-emerald-600 font-bold">Ativo</span>' : '<span class="text-red-500 font-bold">Bloqueado</span>'}</p>
           </div>
           <button onclick='preencherFormAdmin(${JSON.stringify(u)})' class="text-xs bg-slate-100 px-3 py-1.5 rounded-lg font-semibold text-slate-700">Editar</button>
         `;
@@ -364,6 +375,7 @@
       document.getElementById('adm-senha').value = u.senha;
       document.getElementById('adm-perfil').value = u.perfil;
       document.getElementById('adm-whats').value = u.whatsapp;
+      document.getElementById('adm-vinculados').value = u.vinculados.join(', ');
       document.getElementById('adm-ativo').checked = u.ativo;
     }
 
@@ -374,6 +386,7 @@
         senha: document.getElementById('adm-senha').value.trim(),
         perfil: document.getElementById('adm-perfil').value,
         whatsapp: document.getElementById('adm-whats').value.replace(/\D/g, ''),
+        vinculados: document.getElementById('adm-vinculados').value.toLowerCase().trim(),
         ativo: document.getElementById('adm-ativo').checked
       };
       if (!payload.login || !payload.senha) return alert('Informe usuário e senha.');
@@ -382,13 +395,14 @@
       document.getElementById('adm-login').value = '';
       document.getElementById('adm-senha').value = '';
       document.getElementById('adm-whats').value = '';
+      document.getElementById('adm-vinculados').value = '';
       carregarDados(true);
     }
 
     // PLANNER
     async function adicionarItemPlanner() {
       const compradorAlvo = document.getElementById('plan-comprador-alvo').value;
-      if (!compradorAlvo) return alert('Selecione um comprador válido.');
+      if (!compradorAlvo) return alert('Selecione um comprador válido vinculado a você.');
 
       const produto = document.getElementById('plan-produto').value.trim();
       const qtd = parseInt(document.getElementById('plan-qtd').value) || 1;
@@ -425,7 +439,7 @@
       
       document.getElementById('plan-count').innerText = itensDoComprador.length;
 
-      if (itensDoComprador.length === 0) {
+      if (!compradorSelecionado || itensDoComprador.length === 0) {
         container.innerHTML = '<p class="text-xs text-slate-400 bg-white p-4 rounded-xl text-center">Nenhum item criado para este comprador.</p>';
         return;
       }
@@ -462,7 +476,7 @@
       await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'limpar_lista', comprador: compradorSelecionado }) });
     }
 
-    // USER (COMPRADOR) - Vê apenas o que é vinculado a ele
+    // USER (COMPRADOR)
     function renderizarUser() {
       const meuLogin = usuarioLogado.login.toLowerCase();
       const meusItens = itens.filter(i => i.comprador === meuLogin);
@@ -611,7 +625,7 @@
     function pedirFotoWhatsApp(item) {
       let fone = item.planner_whatsapp;
       if (!fone) {
-        const planner = usuarios.find(u => u.perfil === 'PLANNER' && u.whatsapp);
+        const planner = usuarios.find(u => u.login.toLowerCase() === item.planner_nome.toLowerCase() && u.whatsapp);
         if (planner) fone = planner.whatsapp;
       }
       if (!fone) return alert('O Planner não possui WhatsApp cadastrado.');
@@ -621,7 +635,7 @@
     }
 
     function atualizarTotais() {
-      if (usuarioLogado.perfil !== 'USER') {
+      if (!usuarioLogado || usuarioLogado.perfil !== 'USER') {
         document.getElementById('total-estimado').innerText = 'R$ 0,00';
         document.getElementById('total-real').innerText = 'R$ 0,00';
         return;

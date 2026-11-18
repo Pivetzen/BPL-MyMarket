@@ -81,10 +81,15 @@
           </select>
           <input type="tel" id="adm-whats" placeholder="WhatsApp (55859...)" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
         </div>
+        
+        <!-- Seleção Múltipla de Planners -->
         <div class="mb-3">
-          <label class="text-[11px] font-bold text-slate-500 block mb-1">Planners Vinculados (se for USER, separe por vírgula se houver mais de um):</label>
-          <input type="text" id="adm-vinculados" placeholder="Ex: matheus, outroplanner" class="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
+          <label class="text-[11px] font-bold text-slate-500 block mb-1">Planners Vinculados (selecione os que podem enviar listas para este usuário):</label>
+          <div id="adm-planners-checkboxes" class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2 max-h-36 overflow-y-auto">
+            <!-- Preenchido dinamicamente via JS -->
+          </div>
         </div>
+
         <div class="flex items-center justify-between">
           <label class="flex items-center gap-2 text-xs font-semibold text-slate-700">
             <input type="checkbox" id="adm-ativo" checked class="w-4 h-4 accent-emerald-600"> Acesso Liberado
@@ -307,6 +312,7 @@
         if (data.status === 'ok') {
           itens = data.itens;
           usuarios = data.usuarios;
+          atualizarCheckboxesPlanners();
           atualizarSelectCompradores();
           renderizarTudo();
         }
@@ -317,13 +323,36 @@
       }
     }
 
+    // Renderiza a lista de checkboxes com todos os planners cadastrados
+    function atualizarCheckboxesPlanners(vinculadosAtuais = []) {
+      const container = document.getElementById('adm-planners-checkboxes');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const plannersCadastrados = usuarios.filter(u => u.perfil === 'PLANNER' && u.ativo);
+      if (plannersCadastrados.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400">Nenhum planner ativo cadastrado.</p>';
+        return;
+      }
+
+      plannersCadastrados.forEach(p => {
+        const isChecked = vinculadosAtuais.includes(p.login.toLowerCase());
+        const label = document.createElement('label');
+        label.className = 'flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer';
+        label.innerHTML = `
+          <input type="checkbox" value="${p.login.toLowerCase()}" ${isChecked ? 'checked' : ''} class="w-4 h-4 accent-emerald-600 rounded planner-check">
+          ${p.login}
+        `;
+        container.appendChild(label);
+      });
+    }
+
     function atualizarSelectCompradores() {
       const select = document.getElementById('plan-comprador-alvo');
       if (!select) return;
       const valorAtual = select.value;
       select.innerHTML = '';
       
-      // Filtra apenas usuários USER ativos que tenham o planner logado nos seus "vinculados"
       const meuLogin = usuarioLogado.login.toLowerCase();
       const usuariosVinculados = usuarios.filter(u => 
         u.perfil === 'USER' && 
@@ -375,18 +404,22 @@
       document.getElementById('adm-senha').value = u.senha;
       document.getElementById('adm-perfil').value = u.perfil;
       document.getElementById('adm-whats').value = u.whatsapp;
-      document.getElementById('adm-vinculados').value = u.vinculados.join(', ');
       document.getElementById('adm-ativo').checked = u.ativo;
+      atualizarCheckboxesPlanners(u.vinculados);
     }
 
     async function salvarUsuario() {
+      // Coleta os valores marcados nos checkboxes
+      const checkboxes = document.querySelectorAll('.planner-check:checked');
+      const vinculadosArr = Array.from(checkboxes).map(cb => cb.value);
+
       const payload = {
         action: 'save_user',
         login: document.getElementById('adm-login').value.trim(),
         senha: document.getElementById('adm-senha').value.trim(),
         perfil: document.getElementById('adm-perfil').value,
         whatsapp: document.getElementById('adm-whats').value.replace(/\D/g, ''),
-        vinculados: document.getElementById('adm-vinculados').value.toLowerCase().trim(),
+        vinculados: vinculadosArr.join(','),
         ativo: document.getElementById('adm-ativo').checked
       };
       if (!payload.login || !payload.senha) return alert('Informe usuário e senha.');
@@ -395,7 +428,7 @@
       document.getElementById('adm-login').value = '';
       document.getElementById('adm-senha').value = '';
       document.getElementById('adm-whats').value = '';
-      document.getElementById('adm-vinculados').value = '';
+      atualizarCheckboxesPlanners();
       carregarDados(true);
     }
 

@@ -278,7 +278,6 @@
       document.getElementById('header-user').innerText = usuarioLogado.login;
       document.getElementById('header-badge').innerText = usuarioLogado.perfil;
 
-      // Cálculo e exibição dos dias restantes de vigência no cabeçalho
       atualizarCabecalhoVigencia();
 
       if (usuarioLogado.perfil === 'ADMIN') {
@@ -300,7 +299,7 @@
       }
 
       const hoje = new Date();
-      hoje.setHours(0,0,0,0);
+      hoje.setHours(0, 0, 0, 0);
       const vigenciaDate = new Date(usuarioLogado.vigencia + 'T00:00:00');
       
       const diffTime = vigenciaDate - hoje;
@@ -313,6 +312,13 @@
       } else {
         subtitle.innerHTML = `Plano ativo: <b class="text-emerald-400">${diffDays} dia(s) restante(s)</b>`;
       }
+    }
+
+    function formatarDataBR(isoDate) {
+      if (!isoDate) return 'Ilimitada';
+      const partes = isoDate.split('-');
+      if (partes.length !== 3) return isoDate;
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
     }
 
     function mudarAbaAdmin(aba) {
@@ -344,6 +350,22 @@
         if (data.status === 'ok') {
           itens = data.itens;
           usuarios = data.usuarios;
+
+          if (usuarioLogado) {
+            const atualizado = usuarios.find(u => u.login.toLowerCase() === usuarioLogado.login.toLowerCase());
+            if (atualizado) {
+              if (!atualizado.ativo) {
+                alert('Seu plano venceu ou seu acesso foi bloqueado.');
+                logout();
+                return;
+              }
+              usuarioLogado.vigencia = atualizado.vigencia;
+              usuarioLogado.vinculados = atualizado.vinculados;
+              localStorage.setItem('mercado_user_session', JSON.stringify(usuarioLogado));
+              atualizarCabecalhoVigencia();
+            }
+          }
+
           atualizarCheckboxesPlanners();
           atualizarSelectCompradores();
           renderizarTudo();
@@ -422,7 +444,7 @@
         div.innerHTML = `
           <div>
             <p class="font-bold text-sm text-slate-800">${u.login} <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">${u.perfil}</span></p>
-            <p class="text-xs text-slate-400">Whats: ${u.whatsapp || '---'} • Vigência: <b>${u.vigencia || 'Ilimitada'}</b> • ${u.ativo ? '<span class="text-emerald-600 font-bold">Ativo</span>' : '<span class="text-red-500 font-bold">Bloqueado</span>'}</p>
+            <p class="text-xs text-slate-400">Whats: ${u.whatsapp || '---'} • Vigência: <b>${formatarDataBR(u.vigencia)}</b> • ${u.ativo ? '<span class="text-emerald-600 font-bold">Ativo</span>' : '<span class="text-red-500 font-bold">Bloqueado</span>'}</p>
           </div>
           <button onclick='preencherFormAdmin(${JSON.stringify(u)})' class="text-xs bg-slate-100 px-3 py-1.5 rounded-lg font-semibold text-slate-700">Editar</button>
         `;
@@ -445,12 +467,12 @@
       const vinculadosArr = Array.from(checkboxes).map(cb => cb.value);
       const vigenciaVal = document.getElementById('adm-vigencia').value;
 
-      // Validação automática no front-end também
       let ativoVal = document.getElementById('adm-ativo').checked;
       if (vigenciaVal) {
-        const hojeStr = new Date().toISOString().split('T')[0];
+        const hoje = new Date();
+        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
         if (vigenciaVal < hojeStr) {
-          ativoVal = false; // Se a data inserida já passou, define como bloqueado
+          ativoVal = false;
         }
       }
 
@@ -568,7 +590,6 @@
       document.getElementById('box-confirmados').classList.toggle('hidden', confirmados.length === 0);
       document.getElementById('box-faltando').classList.toggle('hidden', faltando.length === 0);
 
-      // Renderizar Pendentes
       const divPend = document.getElementById('user-lista-pendentes');
       divPend.innerHTML = pendentes.length === 0 ? '<p class="text-xs text-slate-400 bg-white p-4 rounded-xl text-center">Nenhum item pendente na sua lista no momento.</p>' : '';
 
@@ -602,7 +623,6 @@
         divPend.appendChild(card);
       });
 
-      // Renderizar Confirmados
       const divConf = document.getElementById('user-lista-confirmados');
       divConf.innerHTML = '';
       confirmados.forEach(item => {
@@ -619,7 +639,6 @@
         divConf.appendChild(card);
       });
 
-      // Renderizar Faltantes
       const divFalt = document.getElementById('user-lista-faltando');
       divFalt.innerHTML = '';
       faltando.forEach(item => {
@@ -630,7 +649,7 @@
             <p class="font-bold text-sm text-red-900 line-through">${item.produto}</p>
             <p class="text-[11px] text-red-600">Item em falta</p>
           </div>
-          <button onclick="voltarParaPendente('${item.id}')" class="text-[11px] bg-white border border-red-200 text-emerald-700 px-2.5 py-1 rounded-lg font-semibold">Voltar</button>
+          <button onclick="voltarParaPendente('${item.id}')" class="text-[11px] bg-white border border-red-200 text-red-700 px-2.5 py-1 rounded-lg font-semibold">Voltar</button>
         `;
         divFalt.appendChild(card);
       });

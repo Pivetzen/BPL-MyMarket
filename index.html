@@ -81,12 +81,18 @@
           </select>
           <input type="tel" id="adm-whats" placeholder="WhatsApp (55859...)" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
         </div>
+
+        <!-- Campo de Data de Vigência -->
+        <div class="mb-2.5">
+          <label class="text-[11px] font-bold text-slate-500 block mb-1">Data de Vigência do Plano:</label>
+          <input type="date" id="adm-vigencia" class="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700">
+        </div>
         
         <!-- Seleção Múltipla de Planners -->
         <div class="mb-3">
-          <label class="text-[11px] font-bold text-slate-500 block mb-1">Planners Vinculados (selecione os que podem enviar listas para este usuário):</label>
+          <label class="text-[11px] font-bold text-slate-500 block mb-1">Planners Vinculados:</label>
           <div id="adm-planners-checkboxes" class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2 max-h-36 overflow-y-auto">
-            <!-- Preenchido dinamicamente via JS -->
+            <!-- Preenchido via JS -->
           </div>
         </div>
 
@@ -112,7 +118,7 @@
           <div>
             <label class="text-[11px] font-bold text-slate-500 block mb-1">Selecionar Comprador (Vinculado a você):</label>
             <select id="plan-comprador-alvo" class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500">
-              <!-- Preenchido via JS apenas com usuários vinculados a este planner -->
+              <!-- Preenchido via JS -->
             </select>
           </div>
 
@@ -272,6 +278,9 @@
       document.getElementById('header-user').innerText = usuarioLogado.login;
       document.getElementById('header-badge').innerText = usuarioLogado.perfil;
 
+      // Cálculo e exibição dos dias restantes de vigência no cabeçalho
+      atualizarCabecalhoVigencia();
+
       if (usuarioLogado.perfil === 'ADMIN') {
         document.getElementById('admin-tabs').classList.remove('hidden');
         mudarAbaAdmin('USER');
@@ -281,6 +290,29 @@
       }
 
       carregarDados(true);
+    }
+
+    function atualizarCabecalhoVigencia() {
+      const subtitle = document.getElementById('header-subtitle');
+      if (!usuarioLogado.vigencia) {
+        subtitle.innerText = 'Vigência: Ilimitada';
+        return;
+      }
+
+      const hoje = new Date();
+      hoje.setHours(0,0,0,0);
+      const vigenciaDate = new Date(usuarioLogado.vigencia + 'T00:00:00');
+      
+      const diffTime = vigenciaDate - hoje;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 0) {
+        subtitle.innerHTML = '<span class="text-red-400 font-bold">Plano Vencido</span>';
+      } else if (diffDays === 0) {
+        subtitle.innerHTML = '<span class="text-amber-400 font-bold">Vence hoje!</span>';
+      } else {
+        subtitle.innerHTML = `Plano ativo: <b class="text-emerald-400">${diffDays} dia(s) restante(s)</b>`;
+      }
     }
 
     function mudarAbaAdmin(aba) {
@@ -323,7 +355,6 @@
       }
     }
 
-    // Renderiza a lista de checkboxes com todos os planners cadastrados
     function atualizarCheckboxesPlanners(vinculadosAtuais = []) {
       const container = document.getElementById('adm-planners-checkboxes');
       if (!container) return;
@@ -391,7 +422,7 @@
         div.innerHTML = `
           <div>
             <p class="font-bold text-sm text-slate-800">${u.login} <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">${u.perfil}</span></p>
-            <p class="text-xs text-slate-400">Whats: ${u.whatsapp || '---'} • Vínculos: <b>${u.vinculados.join(', ') || 'Nenhum'}</b> • ${u.ativo ? '<span class="text-emerald-600 font-bold">Ativo</span>' : '<span class="text-red-500 font-bold">Bloqueado</span>'}</p>
+            <p class="text-xs text-slate-400">Whats: ${u.whatsapp || '---'} • Vigência: <b>${u.vigencia || 'Ilimitada'}</b> • ${u.ativo ? '<span class="text-emerald-600 font-bold">Ativo</span>' : '<span class="text-red-500 font-bold">Bloqueado</span>'}</p>
           </div>
           <button onclick='preencherFormAdmin(${JSON.stringify(u)})' class="text-xs bg-slate-100 px-3 py-1.5 rounded-lg font-semibold text-slate-700">Editar</button>
         `;
@@ -404,14 +435,24 @@
       document.getElementById('adm-senha').value = u.senha;
       document.getElementById('adm-perfil').value = u.perfil;
       document.getElementById('adm-whats').value = u.whatsapp;
+      document.getElementById('adm-vigencia').value = u.vigencia || '';
       document.getElementById('adm-ativo').checked = u.ativo;
       atualizarCheckboxesPlanners(u.vinculados);
     }
 
     async function salvarUsuario() {
-      // Coleta os valores marcados nos checkboxes
       const checkboxes = document.querySelectorAll('.planner-check:checked');
       const vinculadosArr = Array.from(checkboxes).map(cb => cb.value);
+      const vigenciaVal = document.getElementById('adm-vigencia').value;
+
+      // Validação automática no front-end também
+      let ativoVal = document.getElementById('adm-ativo').checked;
+      if (vigenciaVal) {
+        const hojeStr = new Date().toISOString().split('T')[0];
+        if (vigenciaVal < hojeStr) {
+          ativoVal = false; // Se a data inserida já passou, define como bloqueado
+        }
+      }
 
       const payload = {
         action: 'save_user',
@@ -420,7 +461,8 @@
         perfil: document.getElementById('adm-perfil').value,
         whatsapp: document.getElementById('adm-whats').value.replace(/\D/g, ''),
         vinculados: vinculadosArr.join(','),
-        ativo: document.getElementById('adm-ativo').checked
+        vigencia: vigenciaVal,
+        ativo: ativoVal
       };
       if (!payload.login || !payload.senha) return alert('Informe usuário e senha.');
 
@@ -428,6 +470,7 @@
       document.getElementById('adm-login').value = '';
       document.getElementById('adm-senha').value = '';
       document.getElementById('adm-whats').value = '';
+      document.getElementById('adm-vigencia').value = '';
       atualizarCheckboxesPlanners();
       carregarDados(true);
     }
@@ -587,7 +630,7 @@
             <p class="font-bold text-sm text-red-900 line-through">${item.produto}</p>
             <p class="text-[11px] text-red-600">Item em falta</p>
           </div>
-          <button onclick="voltarParaPendente('${item.id}')" class="text-[11px] bg-white border border-red-200 text-red-700 px-2.5 py-1 rounded-lg font-semibold">Voltar</button>
+          <button onclick="voltarParaPendente('${item.id}')" class="text-[11px] bg-white border border-red-200 text-emerald-700 px-2.5 py-1 rounded-lg font-semibold">Voltar</button>
         `;
         divFalt.appendChild(card);
       });

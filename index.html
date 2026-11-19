@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>🛒 BPL - MyMarket</title>
+  <title>BPL - MyMarket</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -85,18 +85,14 @@
           <input type="tel" id="adm-whats" placeholder="WhatsApp (55859...)" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
         </div>
 
-        <!-- Campo de Data de Vigência -->
         <div class="mb-2.5">
           <label class="text-[11px] font-bold text-slate-500 block mb-1">Data de Vigência do Plano:</label>
           <input type="date" id="adm-vigencia" class="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700">
         </div>
         
-        <!-- Seleção Múltipla de Planners -->
         <div class="mb-3">
           <label class="text-[11px] font-bold text-slate-500 block mb-1">Planners Vinculados:</label>
-          <div id="adm-planners-checkboxes" class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2 max-h-36 overflow-y-auto">
-            <!-- Preenchido via JS -->
-          </div>
+          <div id="adm-planners-checkboxes" class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2 max-h-36 overflow-y-auto"></div>
         </div>
 
         <div class="flex items-center justify-between">
@@ -120,9 +116,29 @@
         <div class="space-y-3">
           <div>
             <label class="text-[11px] font-bold text-slate-500 block mb-1">Selecionar Comprador (Vinculado a você):</label>
-            <select id="plan-comprador-alvo" class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500">
-              <!-- Preenchido via JS -->
-            </select>
+            <select id="plan-comprador-alvo" onchange="sincronizarListasPlanner()" class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"></select>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="text-[11px] font-bold text-slate-500 block mb-1">Lista Existente (Opcional):</label>
+              <select id="plan-lista-existente" onchange="selecionarListaExistentePlanner()" class="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700"></select>
+            </div>
+            <div>
+              <label class="text-[11px] font-bold text-slate-500 block mb-1">Nome da Lista:</label>
+              <input type="text" id="plan-nome-lista" placeholder="Ex: Compras do Mês" oninput="renderizarPlanner()" class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800">
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5">
+            <div>
+              <span class="text-xs font-bold text-slate-700 block">Status desta Lista</span>
+              <span class="text-[11px] text-slate-400">Apenas listas ativas aparecem para o comprador</span>
+            </div>
+            <label class="inline-flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="plan-lista-ativa" checked onchange="alternarStatusListaAtual()" class="w-4 h-4 accent-emerald-600">
+              <span id="plan-lista-ativa-label" class="text-xs font-bold text-emerald-600">Lista Ativa</span>
+            </label>
           </div>
 
           <input type="text" id="plan-produto" placeholder="Nome do produto (ex: Feijão Carioca)" class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 text-sm">
@@ -145,9 +161,9 @@
       </div>
 
       <div class="flex justify-between items-center px-1">
-        <h3 class="text-xs font-bold uppercase text-slate-500">Itens Criados (<span id="plan-count">0</span>)</h3>
+        <h3 class="text-xs font-bold uppercase text-slate-500">Itens na Lista (<span id="plan-count">0</span>)</h3>
         <button onclick="limparListaPlanner()" class="text-xs text-red-600 font-semibold hover:underline">
-          <i class="fa-solid fa-trash-can mr-1"></i> Zerar Lista deste Comprador
+          <i class="fa-solid fa-trash-can mr-1"></i> Zerar esta Lista
         </button>
       </div>
 
@@ -156,6 +172,15 @@
 
     <!-- USER (COMPRADOR) -->
     <section id="view-USER" class="hidden p-4 space-y-5">
+      <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+        <label for="user-seletor-lista" class="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1.5">
+          Selecionar Lista Ativa para Visualizar:
+        </label>
+        <select id="user-seletor-lista" onchange="renderizarUser(); atualizarTotais();" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:outline-none focus:border-emerald-600">
+          <!-- Preenchido via JS apenas com listas ativas -->
+        </select>
+      </div>
+
       <div>
         <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">
           Minha Lista de Compras (<span id="user-count-pendentes">0</span>)
@@ -227,7 +252,6 @@
 
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbyTwX-ffOMTcifI5ODPkOcUK3oT5SUu_nCbk6qOjshmwcnd6vxM_MeIknWS5EbnYeLj/exec';
-    // Informe aqui o número do WhatsApp para renovação (ex: '5585999999999'). Se deixar vazio, tentará usar o WhatsApp do usuário ADMIN.
     const WHATSAPP_RENOVACAO = '';
 
     let usuarioLogado = null;
@@ -400,6 +424,8 @@
 
           atualizarCheckboxesPlanners();
           atualizarSelectCompradores();
+          sincronizarListasPlanner();
+          atualizarSeletorListasUser();
           renderizarTudo();
         }
       } catch (e) {
@@ -457,6 +483,150 @@
         select.appendChild(opt);
       });
       if (valorAtual) select.value = valorAtual;
+    }
+
+    function sincronizarListasPlanner() {
+      const comprador = document.getElementById('plan-comprador-alvo')?.value;
+      const selectExistente = document.getElementById('plan-lista-existente');
+      const inputNome = document.getElementById('plan-nome-lista');
+      if (!selectExistente || !inputNome) return;
+
+      const meuLogin = (usuarioLogado?.login || '').toLowerCase();
+      const itensDoPlannerParaComprador = itens.filter(i =>
+        i.comprador === comprador &&
+        (!meuLogin || i.planner_nome.toLowerCase() === meuLogin || usuarioLogado.perfil === 'ADMIN')
+      );
+
+      const nomesUnicos = [...new Set(itensDoPlannerParaComprador.map(i => i.nome_lista || 'Lista Principal'))];
+      const nomeDigitado = inputNome.value.trim();
+
+      selectExistente.innerHTML = '<option value="">-- Nova Lista --</option>';
+      nomesUnicos.forEach(nome => {
+        const opt = document.createElement('option');
+        opt.value = nome;
+        opt.innerText = nome;
+        selectExistente.appendChild(opt);
+      });
+
+      if (nomeDigitado && nomesUnicos.includes(nomeDigitado)) {
+        selectExistente.value = nomeDigitado;
+      } else if (!nomeDigitado && nomesUnicos.length > 0) {
+        selectExistente.value = nomesUnicos[0];
+        inputNome.value = nomesUnicos[0];
+      } else if (!nomeDigitado) {
+        inputNome.value = 'Lista Principal';
+      }
+
+      atualizarCheckboxStatusListaPlanner();
+      renderizarPlanner();
+    }
+
+    function selecionarListaExistentePlanner() {
+      const selectExistente = document.getElementById('plan-lista-existente');
+      const inputNome = document.getElementById('plan-nome-lista');
+      if (!selectExistente || !inputNome) return;
+
+      if (selectExistente.value) {
+        inputNome.value = selectExistente.value;
+      } else {
+        inputNome.value = '';
+        inputNome.focus();
+      }
+
+      atualizarCheckboxStatusListaPlanner();
+      renderizarPlanner();
+    }
+
+    function atualizarCheckboxStatusListaPlanner() {
+      const comprador = document.getElementById('plan-comprador-alvo')?.value;
+      const nomeLista = (document.getElementById('plan-nome-lista')?.value || 'Lista Principal').trim().toLowerCase();
+      const meuLogin = (usuarioLogado?.login || '').toLowerCase();
+      const chk = document.getElementById('plan-lista-ativa');
+      const lbl = document.getElementById('plan-lista-ativa-label');
+      if (!chk || !lbl) return;
+
+      const itensLista = itens.filter(i =>
+        i.comprador === comprador &&
+        (i.nome_lista || 'Lista Principal').trim().toLowerCase() === nomeLista &&
+        (!meuLogin || i.planner_nome.toLowerCase() === meuLogin || usuarioLogado.perfil === 'ADMIN')
+      );
+
+      const ativa = itensLista.length > 0 ? itensLista.some(i => i.lista_ativa !== false) : true;
+      chk.checked = ativa;
+      lbl.innerText = ativa ? 'Lista Ativa' : 'Lista Inativa';
+      lbl.className = ativa ? 'text-xs font-bold text-emerald-600' : 'text-xs font-bold text-red-500';
+    }
+
+    async function alternarStatusListaAtual() {
+      const comprador = document.getElementById('plan-comprador-alvo')?.value;
+      const nomeLista = (document.getElementById('plan-nome-lista')?.value || 'Lista Principal').trim();
+      const chk = document.getElementById('plan-lista-ativa');
+      const lbl = document.getElementById('plan-lista-ativa-label');
+      const ativa = chk.checked;
+
+      lbl.innerText = ativa ? 'Lista Ativa' : 'Lista Inativa';
+      lbl.className = ativa ? 'text-xs font-bold text-emerald-600' : 'text-xs font-bold text-red-500';
+
+      if (!comprador || !nomeLista) return;
+      const meuLogin = (usuarioLogado?.login || '').toLowerCase();
+
+      itens.forEach(i => {
+        if (
+          i.comprador === comprador &&
+          (i.nome_lista || 'Lista Principal').trim().toLowerCase() === nomeLista.toLowerCase() &&
+          (!meuLogin || i.planner_nome.toLowerCase() === meuLogin || usuarioLogado.perfil === 'ADMIN')
+        ) {
+          i.lista_ativa = ativa;
+        }
+      });
+
+      atualizarSeletorListasUser();
+      renderizarTudo();
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'toggle_lista_ativa',
+          comprador: comprador,
+          nome_lista: nomeLista,
+          planner_nome: usuarioLogado.perfil === 'ADMIN' ? '' : usuarioLogado.login,
+          lista_ativa: ativa
+        })
+      });
+    }
+
+    function atualizarSeletorListasUser() {
+      const select = document.getElementById('user-seletor-lista');
+      if (!select || !usuarioLogado) return;
+
+      const meuLogin = usuarioLogado.login.toLowerCase();
+      const valorAnterior = select.value;
+
+      // Apenas itens do comprador cuja lista esteja ativa
+      const itensAtivosComprador = itens.filter(i => i.comprador === meuLogin && i.lista_ativa !== false);
+      const listasAtivas = [...new Set(itensAtivosComprador.map(i => i.nome_lista || 'Lista Principal'))];
+
+      select.innerHTML = '';
+      if (listasAtivas.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.innerText = 'Nenhuma lista ativa no momento';
+        select.appendChild(opt);
+        return;
+      }
+
+      listasAtivas.forEach(nomeLista => {
+        const opt = document.createElement('option');
+        opt.value = nomeLista;
+        opt.innerText = nomeLista;
+        select.appendChild(opt);
+      });
+
+      if (valorAnterior && listasAtivas.includes(valorAnterior)) {
+        select.value = valorAnterior;
+      } else {
+        select.value = listasAtivas[0];
+      }
     }
 
     function renderizarTudo() {
@@ -534,6 +704,8 @@
       const compradorAlvo = document.getElementById('plan-comprador-alvo').value;
       if (!compradorAlvo) return alert('Selecione um comprador válido vinculado a você.');
 
+      const nomeLista = (document.getElementById('plan-nome-lista').value || 'Lista Principal').trim();
+      const listaAtiva = document.getElementById('plan-lista-ativa').checked;
       const produto = document.getElementById('plan-produto').value.trim();
       const qtd = parseInt(document.getElementById('plan-qtd').value) || 1;
       const valor = lerMoeda(document.getElementById('plan-valor').value);
@@ -548,13 +720,17 @@
         valor_estimado: valor,
         planner_whatsapp: usuarioLogado.whatsapp || '',
         planner_nome: usuarioLogado.login,
-        comprador: compradorAlvo
+        comprador: compradorAlvo,
+        nome_lista: nomeLista,
+        lista_ativa: listaAtiva
       };
 
       itens.push({ ...novoItem, status: 'PENDENTE', qtd_comprada: 0, preco_real: 0 });
       document.getElementById('plan-produto').value = '';
       document.getElementById('plan-qtd').value = 1;
       document.getElementById('plan-valor').value = '';
+      sincronizarListasPlanner();
+      atualizarSeletorListasUser();
       renderizarTudo();
 
       await fetch(API_URL, { method: 'POST', body: JSON.stringify(novoItem) });
@@ -562,25 +738,33 @@
 
     function renderizarPlanner() {
       const container = document.getElementById('planner-lista-itens');
+      if (!container) return;
       container.innerHTML = '';
       
       const compradorSelecionado = document.getElementById('plan-comprador-alvo').value;
-      const itensDoComprador = itens.filter(i => i.comprador === compradorSelecionado);
-      
-      document.getElementById('plan-count').innerText = itensDoComprador.length;
+      const nomeListaSelecionada = (document.getElementById('plan-nome-lista').value || 'Lista Principal').trim().toLowerCase();
+      const meuLogin = (usuarioLogado?.login || '').toLowerCase();
 
-      if (!compradorSelecionado || itensDoComprador.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-400 bg-white p-4 rounded-xl text-center">Nenhum item criado para este comprador.</p>';
+      const itensDaLista = itens.filter(i =>
+        i.comprador === compradorSelecionado &&
+        (i.nome_lista || 'Lista Principal').trim().toLowerCase() === nomeListaSelecionada &&
+        (!meuLogin || i.planner_nome.toLowerCase() === meuLogin || usuarioLogado.perfil === 'ADMIN')
+      );
+      
+      document.getElementById('plan-count').innerText = itensDaLista.length;
+
+      if (!compradorSelecionado || itensDaLista.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 bg-white p-4 rounded-xl text-center">Nenhum item criado nesta lista para este comprador.</p>';
         return;
       }
 
-      itensDoComprador.forEach(item => {
+      itensDaLista.forEach(item => {
         const div = document.createElement('div');
         div.className = 'bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center';
         div.innerHTML = `
           <div>
-            <p class="font-bold text-sm text-slate-800">${item.produto}</p>
-            <p class="text-xs text-slate-500">Qtd: <b>${item.qtd_planejada}</b> • Estimado: <b>${formatarMoeda(item.valor_estimado)}</b>/un</p>
+            <p class="font-bold text-sm text-slate-800">${item.produto} <span class="text-[10px] px-1.5 py-0.5 rounded ${item.lista_ativa !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}">${item.lista_ativa !== false ? 'Ativa' : 'Inativa'}</span></p>
+            <p class="text-xs text-slate-500">Lista: <b>${item.nome_lista || 'Lista Principal'}</b> • Qtd: <b>${item.qtd_planejada}</b> • Estimado: <b>${formatarMoeda(item.valor_estimado)}</b>/un</p>
           </div>
           <button onclick="removerItem('${item.id}')" class="text-red-500 w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
             <i class="fa-solid fa-trash text-xs"></i>
@@ -592,24 +776,44 @@
 
     async function removerItem(id) {
       itens = itens.filter(i => i.id !== id);
+      sincronizarListasPlanner();
+      atualizarSeletorListasUser();
       renderizarTudo();
       await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_item', id }) });
     }
 
     async function limparListaPlanner() {
       const compradorSelecionado = document.getElementById('plan-comprador-alvo').value;
+      const nomeListaSelecionada = (document.getElementById('plan-nome-lista').value || 'Lista Principal').trim();
       if (!compradorSelecionado) return;
-      if (!confirm(`Zerar toda a lista destinada ao usuário ${compradorSelecionado}?`)) return;
+      if (!confirm(`Zerar a lista "${nomeListaSelecionada}" destinada ao usuário ${compradorSelecionado}?`)) return;
 
-      itens = itens.filter(i => i.comprador !== compradorSelecionado);
+      const meuLogin = (usuarioLogado?.login || '').toLowerCase();
+      itens = itens.filter(i => !(
+        i.comprador === compradorSelecionado &&
+        (i.nome_lista || 'Lista Principal').trim().toLowerCase() === nomeListaSelecionada.toLowerCase() &&
+        (!meuLogin || i.planner_nome.toLowerCase() === meuLogin || usuarioLogado.perfil === 'ADMIN')
+      ));
+      sincronizarListasPlanner();
+      atualizarSeletorListasUser();
       renderizarTudo();
-      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'limpar_lista', comprador: compradorSelecionado }) });
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'limpar_lista', comprador: compradorSelecionado, nome_lista: nomeListaSelecionada })
+      });
     }
 
     // USER (COMPRADOR)
     function renderizarUser() {
       const meuLogin = usuarioLogado.login.toLowerCase();
-      const meusItens = itens.filter(i => i.comprador === meuLogin);
+      const listaEscolhida = document.getElementById('user-seletor-lista')?.value || '';
+
+      const meusItens = itens.filter(i =>
+        i.comprador === meuLogin &&
+        i.lista_ativa !== false &&
+        listaEscolhida !== '' &&
+        (i.nome_lista || 'Lista Principal') === listaEscolhida
+      );
 
       const pendentes = meusItens.filter(i => i.status === 'PENDENTE');
       const confirmados = meusItens.filter(i => i.status === 'CONFIRMADO');
@@ -623,7 +827,7 @@
       document.getElementById('box-faltando').classList.toggle('hidden', faltando.length === 0);
 
       const divPend = document.getElementById('user-lista-pendentes');
-      divPend.innerHTML = pendentes.length === 0 ? '<p class="text-xs text-slate-400 bg-white p-4 rounded-xl text-center">Nenhum item pendente na sua lista no momento.</p>' : '';
+      divPend.innerHTML = pendentes.length === 0 ? '<p class="text-xs text-slate-400 bg-white p-4 rounded-xl text-center">Nenhum item pendente nesta lista no momento.</p>' : '';
 
       pendentes.forEach(item => {
         const card = document.createElement('div');
@@ -769,17 +973,24 @@
       }
 
       const meuLogin = usuarioLogado.login.toLowerCase();
+      const listaEscolhida = document.getElementById('user-seletor-lista')?.value || '';
       let totalEstimado = 0;
       let totalReal = 0;
 
-      itens.filter(i => i.comprador === meuLogin).forEach(item => {
-        if (item.status !== 'FALTANDO') {
-          totalEstimado += (item.qtd_planejada * item.valor_estimado);
-        }
-        if (item.status === 'CONFIRMADO') {
-          totalReal += (item.qtd_comprada * item.preco_real);
-        }
-      });
+      if (listaEscolhida) {
+        itens.filter(i =>
+          i.comprador === meuLogin &&
+          i.lista_ativa !== false &&
+          (i.nome_lista || 'Lista Principal') === listaEscolhida
+        ).forEach(item => {
+          if (item.status !== 'FALTANDO') {
+            totalEstimado += (item.qtd_planejada * item.valor_estimado);
+          }
+          if (item.status === 'CONFIRMADO') {
+            totalReal += (item.qtd_comprada * item.preco_real);
+          }
+        });
+      }
 
       document.getElementById('total-estimado').innerText = formatarMoeda(totalEstimado);
       document.getElementById('total-real').innerText = formatarMoeda(totalReal);

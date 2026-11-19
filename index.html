@@ -49,10 +49,13 @@
           <p id="header-subtitle" class="text-[11px] text-slate-400">Ambiente seguro</p>
         </div>
         <div class="flex gap-2">
-          <button onclick="carregarDados(true)" id="btn-refresh" class="w-9 h-9 bg-slate-800 rounded-xl flex items-center justify-center active:scale-90">
+          <button onclick="renovarPlanoWhatsApp()" title="Renovar Plano via WhatsApp" class="w-9 h-9 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-400 rounded-xl flex items-center justify-center active:scale-90 transition">
+            <i class="fa-brands fa-whatsapp text-base"></i>
+          </button>
+          <button onclick="carregarDados(true)" id="btn-refresh" title="Atualizar dados" class="w-9 h-9 bg-slate-800 rounded-xl flex items-center justify-center active:scale-90">
             <i class="fa-solid fa-rotate text-sm"></i>
           </button>
-          <button onclick="logout()" class="w-9 h-9 bg-slate-800 rounded-xl flex items-center justify-center active:scale-90 text-red-400">
+          <button onclick="logout()" title="Sair" class="w-9 h-9 bg-slate-800 rounded-xl flex items-center justify-center active:scale-90 text-red-400">
             <i class="fa-solid fa-right-from-bracket text-sm"></i>
           </button>
         </div>
@@ -224,6 +227,8 @@
 
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbyTwX-ffOMTcifI5ODPkOcUK3oT5SUu_nCbk6qOjshmwcnd6vxM_MeIknWS5EbnYeLj/exec';
+    // Informe aqui o número do WhatsApp para renovação (ex: '5585999999999'). Se deixar vazio, tentará usar o WhatsApp do usuário ADMIN.
+    const WHATSAPP_RENOVACAO = '';
 
     let usuarioLogado = null;
     let itens = [];
@@ -291,6 +296,15 @@
       carregarDados(true);
     }
 
+    function calcularDiasRestantes(isoDate) {
+      if (!isoDate) return null;
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const vigenciaDate = new Date(isoDate + 'T00:00:00');
+      const diffTime = vigenciaDate - hoje;
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
     function atualizarCabecalhoVigencia() {
       const subtitle = document.getElementById('header-subtitle');
       if (!usuarioLogado.vigencia) {
@@ -298,12 +312,7 @@
         return;
       }
 
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0);
-      const vigenciaDate = new Date(usuarioLogado.vigencia + 'T00:00:00');
-      
-      const diffTime = vigenciaDate - hoje;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const diffDays = calcularDiasRestantes(usuarioLogado.vigencia);
 
       if (diffDays < 0) {
         subtitle.innerHTML = '<span class="text-red-400 font-bold">Plano Vencido</span>';
@@ -312,6 +321,29 @@
       } else {
         subtitle.innerHTML = `Plano ativo: <b class="text-emerald-400">${diffDays} dia(s) restante(s)</b>`;
       }
+    }
+
+    function renovarPlanoWhatsApp() {
+      if (!usuarioLogado) return;
+
+      const nomeUsuario = usuarioLogado.login;
+      const perfilUsuario = usuarioLogado.perfil;
+      const dataVigenciaTexto = usuarioLogado.vigencia ? formatarDataBR(usuarioLogado.vigencia) : 'sem data definida';
+      const diasRestantes = usuarioLogado.vigencia ? Math.max(0, calcularDiasRestantes(usuarioLogado.vigencia)) : 'ilimitados';
+
+      const mensagem = `Olá, sou ${nomeUsuario} - ${perfilUsuario}!\n\nGostaria de renovar meu plano no BPL - MyMarket, que irá expirar no dia ${dataVigenciaTexto}, em ${diasRestantes} dias!`;
+
+      let foneDestino = (WHATSAPP_RENOVACAO || '').replace(/\D/g, '');
+      if (!foneDestino && Array.isArray(usuarios)) {
+        const adminUser = usuarios.find(u => u.perfil === 'ADMIN' && u.whatsapp);
+        if (adminUser) foneDestino = String(adminUser.whatsapp).replace(/\D/g, '');
+      }
+
+      const url = foneDestino
+        ? `https://wa.me/${foneDestino}?text=${encodeURIComponent(mensagem)}`
+        : `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
+
+      window.open(url, '_blank');
     }
 
     function formatarDataBR(isoDate) {
@@ -649,7 +681,7 @@
             <p class="font-bold text-sm text-red-900 line-through">${item.produto}</p>
             <p class="text-[11px] text-red-600">Item em falta</p>
           </div>
-          <button onclick="voltarParaPendente('${item.id}')" class="text-[11px] bg-white border border-red-200 text-red-700 px-2.5 py-1 rounded-lg font-semibold">Voltar</button>
+          <button onclick="voltarParaPendente('${item.id}')" class="text-[11px] bg-white border border-red-200 text-emerald-700 px-2.5 py-1 rounded-lg font-semibold">Voltar</button>
         `;
         divFalt.appendChild(card);
       });

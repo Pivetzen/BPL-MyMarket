@@ -96,15 +96,15 @@
         </div>
       </div>
 
-      <!-- Abas de Navegação (3 para ADMIN, 2 para TRIAL) -->
-      <div id="admin-tabs" class="hidden grid grid-cols-3 gap-1.5 mt-3 pt-3 border-t border-slate-800">
+      <!-- Abas de Navegação -->
+      <div id="admin-tabs" class="hidden grid-cols-3 gap-1.5 mt-3 pt-3 border-t border-slate-800">
         <button onclick="mudarAbaAdmin('USER')" id="tab-USER" class="py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white">Comprador</button>
         <button onclick="mudarAbaAdmin('PLANNER')" id="tab-PLANNER" class="py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300">Planner</button>
-        <button onclick="mudarAbaAdmin('ADMIN')" id="tab-ADMIN" class="py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300">Usuários</button>
+        <button onclick="mudarAbaAdmin('ADMIN')" id="tab-ADMIN" class="hidden py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300">Usuários</button>
       </div>
     </header>
 
-    <!-- ADMIN -->
+    <!-- ADMIN (EXCLUSIVO DO ADMIN) -->
     <section id="view-ADMIN" class="hidden p-4 space-y-4">
       <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
         <h2 class="font-bold text-sm text-slate-800 mb-3"><i class="fa-solid fa-user-gear text-emerald-600 mr-1"></i> Editar Perfil de Usuário</h2>
@@ -420,16 +420,23 @@
 
       const adminTabs = document.getElementById('admin-tabs');
       const tabAdmin = document.getElementById('tab-ADMIN');
+      const viewAdmin = document.getElementById('view-ADMIN');
+
+      // Garante que a view ADMIN só exista para ADMIN
+      if (usuarioLogado.perfil !== 'ADMIN') {
+        viewAdmin.classList.add('hidden');
+        if (tabAdmin) tabAdmin.classList.add('hidden');
+      }
 
       if (usuarioLogado.perfil === 'ADMIN') {
         adminTabs.classList.remove('hidden', 'grid-cols-2');
         adminTabs.classList.add('grid-cols-3');
-        tabAdmin.classList.remove('hidden');
+        if (tabAdmin) tabAdmin.classList.remove('hidden');
         mudarAbaAdmin('USER');
       } else if (usuarioLogado.perfil === 'TRIAL') {
         adminTabs.classList.remove('hidden', 'grid-cols-3');
         adminTabs.classList.add('grid-cols-2');
-        tabAdmin.classList.add('hidden');
+        if (tabAdmin) tabAdmin.classList.add('hidden');
         mudarAbaAdmin('PLANNER');
       } else {
         adminTabs.classList.add('hidden');
@@ -497,13 +504,21 @@
     }
 
     function mudarAbaAdmin(aba) {
+      // Bloqueio estrito: apenas ADMIN pode acessar a aba ADMIN
+      if (aba === 'ADMIN' && usuarioLogado?.perfil !== 'ADMIN') {
+        aba = 'PLANNER';
+      }
+
       ['USER', 'PLANNER', 'ADMIN'].forEach(t => {
         const btn = document.getElementById(`tab-${t}`);
-        if (btn) {
-          btn.className = t === aba
-            ? 'py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white'
-            : 'py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300';
+        if (!btn) return;
+        if (t === 'ADMIN' && usuarioLogado?.perfil !== 'ADMIN') {
+          btn.classList.add('hidden');
+          return;
         }
+        btn.className = t === aba
+          ? 'py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white'
+          : 'py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300';
       });
       exibirView(aba);
     }
@@ -512,6 +527,11 @@
       document.getElementById('view-ADMIN').classList.add('hidden');
       document.getElementById('view-PLANNER').classList.add('hidden');
       document.getElementById('view-USER').classList.add('hidden');
+
+      // Bloqueio estrito: nunca exibe view-ADMIN se o usuário não for ADMIN
+      if (perfil === 'ADMIN' && usuarioLogado?.perfil !== 'ADMIN') {
+        perfil = 'PLANNER';
+      }
 
       document.getElementById(`view-${perfil}`).classList.remove('hidden');
       document.getElementById('footer-totais').classList.toggle('hidden', perfil !== 'USER');
@@ -538,8 +558,14 @@
             logout();
             return;
           }
+          const perfilMudou = atualizado.perfil !== usuarioLogado.perfil;
           usuarioLogado = atualizado;
           atualizarCabecalhoVigencia();
+          document.getElementById('header-badge').innerText = usuarioLogado.perfil;
+          if (perfilMudou) {
+            iniciarInterface();
+            return;
+          }
         }
 
         atualizarCheckboxesPlanners();
@@ -752,7 +778,9 @@
     }
 
     function renderizarTudo() {
-      renderizarAdmin();
+      if (usuarioLogado?.perfil === 'ADMIN') {
+        renderizarAdmin();
+      }
       renderizarPlanner();
       renderizarUser();
       atualizarTotais();
@@ -760,6 +788,7 @@
 
     // ADMIN
     function renderizarAdmin() {
+      if (usuarioLogado?.perfil !== 'ADMIN') return;
       const container = document.getElementById('lista-usuarios');
       if (!container) return;
       container.innerHTML = '';
@@ -778,6 +807,7 @@
     }
 
     function preencherFormAdmin(u) {
+      if (usuarioLogado?.perfil !== 'ADMIN') return;
       document.getElementById('adm-id').value = u.id;
       document.getElementById('adm-login').value = u.login;
       document.getElementById('adm-perfil').value = u.perfil;
@@ -788,6 +818,7 @@
     }
 
     async function salvarUsuario() {
+      if (usuarioLogado?.perfil !== 'ADMIN') return alert('Acesso negado.');
       const id = document.getElementById('adm-id').value;
       if (!id) return alert('Clique em "Editar" em um usuário da lista abaixo primeiro.');
 

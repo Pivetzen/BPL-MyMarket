@@ -15,7 +15,13 @@
 
   <!-- TELA DE LOGIN / CADASTRO -->
   <div id="screen-login" class="min-h-screen flex flex-col justify-center p-5 max-w-md mx-auto">
-    <div class="bg-white rounded-3xl shadow-md p-6 border border-slate-200">
+    <div class="bg-white rounded-3xl shadow-md p-6 border border-slate-200 relative">
+      
+      <!-- Botão WhatsApp Dúvidas (Canto Superior Direito) -->
+      <button onclick="duvidasWhatsApp()" title="Tirar dúvidas via WhatsApp" class="absolute top-5 right-5 w-10 h-10 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-600 rounded-2xl flex items-center justify-center active:scale-90 transition shadow-sm">
+        <i class="fa-brands fa-whatsapp text-xl"></i>
+      </button>
+
       <div class="w-14 h-14 bg-emerald-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl">
         <i class="fa-solid fa-cart-shopping"></i>
       </div>
@@ -32,11 +38,11 @@
         </button>
       </div>
 
-      <!-- FORMULÁRIO LOGIN -->
+      <!-- FORMULÁRIO LOGIN (APENAS E-MAIL E SENHA) -->
       <div id="form-login" class="space-y-3">
         <div>
-          <label class="text-xs font-bold text-slate-600 block mb-1">E-mail ou Usuário</label>
-          <input type="text" id="login-user" placeholder="seu@email.com ou matheus" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600">
+          <label class="text-xs font-bold text-slate-600 block mb-1">E-mail</label>
+          <input type="email" id="login-email" placeholder="seu@email.com" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600">
         </div>
         <div>
           <label class="text-xs font-bold text-slate-600 block mb-1">Senha</label>
@@ -44,6 +50,10 @@
         </div>
         <button onclick="fazerLogin()" id="btn-login" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-sm active:scale-95 transition mt-2">
           Entrar
+        </button>
+
+        <button onclick="duvidasWhatsApp()" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 active:scale-95 transition mt-2">
+          <i class="fa-brands fa-whatsapp text-base"></i> Dúvidas? Fale conosco no WhatsApp
         </button>
       </div>
 
@@ -58,8 +68,8 @@
           <input type="email" id="cad-email" placeholder="seu@email.com" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-600">
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-600 block mb-1">WhatsApp (com DDD)</label>
-          <input type="tel" id="cad-whats" placeholder="Ex: 85999999999" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-600">
+          <label class="text-xs font-bold text-slate-600 block mb-1">WhatsApp</label>
+          <input type="tel" id="cad-whats" maxlength="15" oninput="mascaraTelefone(this)" placeholder="(85) 99999-9999" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-600">
         </div>
         <div>
           <label class="text-xs font-bold text-slate-600 block mb-1">Senha (mín. 6 caracteres)</label>
@@ -96,7 +106,7 @@
         </div>
       </div>
 
-      <!-- Abas de Navegação -->
+      <!-- Abas de Navegação Dinâmicas -->
       <div id="admin-tabs" class="hidden grid-cols-3 gap-1.5 mt-3 pt-3 border-t border-slate-800">
         <button onclick="mudarAbaAdmin('USER')" id="tab-USER" class="py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white">Comprador</button>
         <button onclick="mudarAbaAdmin('PLANNER')" id="tab-PLANNER" class="py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300">Planner</button>
@@ -111,20 +121,28 @@
         <input type="hidden" id="adm-id">
         <div class="grid grid-cols-2 gap-2.5 mb-2.5">
           <input type="text" id="adm-login" placeholder="Usuário" readonly class="bg-slate-200 text-slate-600 rounded-xl px-3 py-2.5 text-sm cursor-not-allowed">
-          <select id="adm-perfil" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm font-semibold">
-            <option value="TRIAL">TRIAL (Teste 5d)</option>
+          <select id="adm-perfil" onchange="aoMudarPerfilAdmin()" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm font-semibold">
+            <option value="TRIAL">TRIAL (5d • 1 lista + Comprador)</option>
             <option value="USER">USER (Comprador)</option>
-            <option value="PLANNER">PLANNER (Criador)</option>
+            <option value="PLANNER_PADRAO">PLANNER PADRÃO (1 lista)</option>
+            <option value="PLANNER_PRO">PLANNER PRO (5 listas + Comprador)</option>
             <option value="ADMIN">ADMIN (Total)</option>
           </select>
         </div>
         <div class="grid grid-cols-2 gap-2.5 mb-2.5">
-          <input type="tel" id="adm-whats" placeholder="WhatsApp (55859...)" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
+          <input type="tel" id="adm-whats" maxlength="15" oninput="mascaraTelefone(this)" placeholder="(85) 99999-9999" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
           <input type="date" id="adm-vigencia" class="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700">
+        </div>
+
+        <div class="mb-2.5 bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+          <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+            <input type="checkbox" id="adm-acesso-comprador" class="w-4 h-4 accent-emerald-600">
+            Liberar também acesso de Comprador (USER) nesta conta
+          </label>
         </div>
         
         <div class="mb-3">
-          <label class="text-[11px] font-bold text-slate-500 block mb-1">Planners Vinculados:</label>
+          <label class="text-[11px] font-bold text-slate-500 block mb-1">Planners Vinculados (para receber listas):</label>
           <div id="adm-planners-checkboxes" class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2 max-h-36 overflow-y-auto"></div>
         </div>
 
@@ -144,7 +162,10 @@
     <!-- PLANNER -->
     <section id="view-PLANNER" class="hidden p-4 space-y-4">
       <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-        <h2 class="font-bold text-sm text-slate-800 mb-3"><i class="fa-solid fa-pen-to-square text-emerald-600 mr-1"></i> Criar Item na Lista</h2>
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="font-bold text-sm text-slate-800"><i class="fa-solid fa-pen-to-square text-emerald-600 mr-1"></i> Criar Item na Lista</h2>
+          <span id="plan-limite-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">---</span>
+        </div>
         
         <div class="space-y-3">
           <div>
@@ -154,7 +175,7 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
-              <label class="text-[11px] font-bold text-slate-500 block mb-1">Lista Existente (Opcional):</label>
+              <label class="text-[11px] font-bold text-slate-500 block mb-1">Lista Existente:</label>
               <select id="plan-lista-existente" onchange="selecionarListaExistentePlanner()" class="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700"></select>
             </div>
             <div>
@@ -286,12 +307,43 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_ItkigrUMm355CJJAt1-SMQ_IdWp9Drk';
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const WHATSAPP_RENOVACAO = '';
+    // WhatsApp do Admin (com DDI 55) para dúvidas e renovações
+    const WHATSAPP_ADMIN = '5585987804628';
 
     let usuarioLogado = null;
     let itens = [];
     let usuarios = [];
     let itemAtualModal = null;
+
+    // Helpers de Permissões por Perfil
+    function obterNomePerfil(perfil) {
+      const mapa = {
+        'ADMIN': 'ADMIN',
+        'USER': 'USER',
+        'PLANNER_PADRAO': 'PLANNER PADRÃO',
+        'PLANNER_PRO': 'PLANNER PRO',
+        'TRIAL': 'TRIAL'
+      };
+      return mapa[perfil] || perfil;
+    }
+
+    function podeAcessarPlanner(u) {
+      if (!u) return false;
+      return ['ADMIN', 'PLANNER_PADRAO', 'PLANNER_PRO', 'TRIAL'].includes(u.perfil);
+    }
+
+    function podeAcessarComprador(u) {
+      if (!u) return false;
+      return ['ADMIN', 'USER', 'PLANNER_PRO', 'TRIAL'].includes(u.perfil) || u.acesso_comprador === true;
+    }
+
+    function obterLimiteListas(u) {
+      if (!u) return 0;
+      if (u.perfil === 'ADMIN') return Infinity;
+      if (u.perfil === 'PLANNER_PRO') return 5;
+      if (u.perfil === 'PLANNER_PADRAO' || u.perfil === 'TRIAL') return 1;
+      return 0;
+    }
 
     window.onload = async () => {
       const { data: { session } } = await sb.auth.getSession();
@@ -313,6 +365,12 @@
         : 'py-2 rounded-lg text-xs font-bold text-slate-500 transition';
     }
 
+    function duvidasWhatsApp() {
+      const fone = WHATSAPP_ADMIN.replace(/\D/g, '');
+      const msg = 'Olá, gostaria de tirar dúvidas sobre o BPL - MyMarket';
+      window.open(`https://wa.me/${fone}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
     async function fazerCadastro() {
       const login = document.getElementById('cad-login').value.trim().toLowerCase().replace(/\s+/g, '');
       const email = document.getElementById('cad-email').value.trim().toLowerCase();
@@ -320,6 +378,7 @@
       const password = document.getElementById('cad-pass').value;
 
       if (!login || !email || !password) return alert('Preencha usuário, e-mail e senha.');
+      if (whatsapp && whatsapp.length < 10) return alert('Informe um WhatsApp válido com DDD.');
       if (password.length < 6) return alert('A senha deve ter no mínimo 6 caracteres.');
 
       const btn = document.getElementById('btn-cadastro');
@@ -356,27 +415,21 @@
     }
 
     async function fazerLogin() {
-      let identificador = document.getElementById('login-user').value.trim().toLowerCase();
+      const email = document.getElementById('login-email').value.trim().toLowerCase();
       const password = document.getElementById('login-pass').value;
-      if (!identificador || !password) return alert('Preencha usuário/e-mail e senha.');
+      if (!email || !password) return alert('Preencha e-mail e senha.');
 
       const btn = document.getElementById('btn-login');
       btn.innerText = 'Verificando...';
       btn.disabled = true;
 
       try {
-        if (!identificador.includes('@')) {
-          const { data: perfilBusca } = await sb.from('perfis').select('email').eq('login', identificador).maybeSingle();
-          if (!perfilBusca) throw new Error('Usuário não encontrado.');
-          identificador = perfilBusca.email;
-        }
-
         const { data, error } = await sb.auth.signInWithPassword({
-          email: identificador,
+          email,
           password
         });
 
-        if (error) throw new Error('Usuário ou senha inválidos.');
+        if (error) throw new Error('E-mail ou senha inválidos.');
         await carregarPerfilSessao(data.user.id);
       } catch (e) {
         alert(e.message);
@@ -414,33 +467,40 @@
       document.getElementById('screen-login').classList.add('hidden');
       document.getElementById('screen-app').classList.remove('hidden');
       document.getElementById('header-user').innerText = usuarioLogado.login;
-      document.getElementById('header-badge').innerText = usuarioLogado.perfil;
+      document.getElementById('header-badge').innerText = obterNomePerfil(usuarioLogado.perfil);
 
       atualizarCabecalhoVigencia();
 
       const adminTabs = document.getElementById('admin-tabs');
+      const tabUser = document.getElementById('tab-USER');
+      const tabPlanner = document.getElementById('tab-PLANNER');
       const tabAdmin = document.getElementById('tab-ADMIN');
       const viewAdmin = document.getElementById('view-ADMIN');
 
-      // Garante que a view ADMIN só exista para ADMIN
-      if (usuarioLogado.perfil !== 'ADMIN') {
+      const temUser = podeAcessarComprador(usuarioLogado);
+      const temPlanner = podeAcessarPlanner(usuarioLogado);
+      const temAdmin = usuarioLogado.perfil === 'ADMIN';
+
+      // Trava estrita para ADMIN
+      if (!temAdmin) {
         viewAdmin.classList.add('hidden');
-        if (tabAdmin) tabAdmin.classList.add('hidden');
+        tabAdmin.classList.add('hidden');
+      } else {
+        tabAdmin.classList.remove('hidden');
       }
 
-      if (usuarioLogado.perfil === 'ADMIN') {
-        adminTabs.classList.remove('hidden', 'grid-cols-2');
-        adminTabs.classList.add('grid-cols-3');
-        if (tabAdmin) tabAdmin.classList.remove('hidden');
-        mudarAbaAdmin('USER');
-      } else if (usuarioLogado.perfil === 'TRIAL') {
-        adminTabs.classList.remove('hidden', 'grid-cols-3');
-        adminTabs.classList.add('grid-cols-2');
-        if (tabAdmin) tabAdmin.classList.add('hidden');
-        mudarAbaAdmin('PLANNER');
+      tabUser.classList.toggle('hidden', !temUser);
+      tabPlanner.classList.toggle('hidden', !temPlanner);
+
+      const qtdAbas = (temUser ? 1 : 0) + (temPlanner ? 1 : 0) + (temAdmin ? 1 : 0);
+
+      if (qtdAbas > 1) {
+        adminTabs.classList.remove('hidden', 'grid-cols-2', 'grid-cols-3');
+        adminTabs.classList.add(qtdAbas === 3 ? 'grid-cols-3' : 'grid-cols-2');
+        mudarAbaAdmin(temUser ? 'USER' : 'PLANNER');
       } else {
         adminTabs.classList.add('hidden');
-        exibirView(usuarioLogado.perfil);
+        exibirView(temPlanner ? 'PLANNER' : 'USER');
       }
 
       carregarDados(true);
@@ -477,13 +537,13 @@
     function renovarPlanoWhatsApp() {
       if (!usuarioLogado) return;
       const nomeUsuario = usuarioLogado.login;
-      const perfilUsuario = usuarioLogado.perfil;
+      const perfilUsuario = obterNomePerfil(usuarioLogado.perfil);
       const dataVigenciaTexto = usuarioLogado.vigencia ? formatarDataBR(usuarioLogado.vigencia) : 'sem data definida';
       const diasRestantes = usuarioLogado.vigencia ? Math.max(0, calcularDiasRestantes(usuarioLogado.vigencia)) : 'ilimitados';
 
       const mensagem = `Olá, sou ${nomeUsuario} (${perfilUsuario})!\n\nGostaria de ativar/renovar meu plano no BPL - MyMarket, que expira em ${dataVigenciaTexto} (${diasRestantes} dias)!`;
 
-      let foneDestino = (WHATSAPP_RENOVACAO || '').replace(/\D/g, '');
+      let foneDestino = WHATSAPP_ADMIN.replace(/\D/g, '');
       if (!foneDestino && Array.isArray(usuarios)) {
         const adminUser = usuarios.find(u => u.perfil === 'ADMIN' && u.whatsapp);
         if (adminUser) foneDestino = String(adminUser.whatsapp).replace(/\D/g, '');
@@ -504,10 +564,9 @@
     }
 
     function mudarAbaAdmin(aba) {
-      // Bloqueio estrito: apenas ADMIN pode acessar a aba ADMIN
-      if (aba === 'ADMIN' && usuarioLogado?.perfil !== 'ADMIN') {
-        aba = 'PLANNER';
-      }
+      if (aba === 'ADMIN' && usuarioLogado?.perfil !== 'ADMIN') aba = 'USER';
+      if (aba === 'PLANNER' && !podeAcessarPlanner(usuarioLogado)) aba = 'USER';
+      if (aba === 'USER' && !podeAcessarComprador(usuarioLogado)) aba = 'PLANNER';
 
       ['USER', 'PLANNER', 'ADMIN'].forEach(t => {
         const btn = document.getElementById(`tab-${t}`);
@@ -528,10 +587,9 @@
       document.getElementById('view-PLANNER').classList.add('hidden');
       document.getElementById('view-USER').classList.add('hidden');
 
-      // Bloqueio estrito: nunca exibe view-ADMIN se o usuário não for ADMIN
-      if (perfil === 'ADMIN' && usuarioLogado?.perfil !== 'ADMIN') {
-        perfil = 'PLANNER';
-      }
+      if (perfil === 'ADMIN' && usuarioLogado?.perfil !== 'ADMIN') perfil = 'USER';
+      if (perfil === 'PLANNER' && !podeAcessarPlanner(usuarioLogado)) perfil = 'USER';
+      if (perfil === 'USER' && !podeAcessarComprador(usuarioLogado)) perfil = 'PLANNER';
 
       document.getElementById(`view-${perfil}`).classList.remove('hidden');
       document.getElementById('footer-totais').classList.toggle('hidden', perfil !== 'USER');
@@ -558,11 +616,15 @@
             logout();
             return;
           }
-          const perfilMudou = atualizado.perfil !== usuarioLogado.perfil;
+          const mudouPermissao =
+            atualizado.perfil !== usuarioLogado.perfil ||
+            atualizado.acesso_comprador !== usuarioLogado.acesso_comprador;
+
           usuarioLogado = atualizado;
           atualizarCabecalhoVigencia();
-          document.getElementById('header-badge').innerText = usuarioLogado.perfil;
-          if (perfilMudou) {
+          document.getElementById('header-badge').innerText = obterNomePerfil(usuarioLogado.perfil);
+
+          if (mudouPermissao) {
             iniciarInterface();
             return;
           }
@@ -585,7 +647,9 @@
       if (!container) return;
       container.innerHTML = '';
 
-      const plannersCadastrados = usuarios.filter(u => (u.perfil === 'PLANNER' || u.perfil === 'ADMIN') && u.ativo);
+      const plannersCadastrados = usuarios.filter(u =>
+        ['PLANNER_PADRAO', 'PLANNER_PRO', 'ADMIN'].includes(u.perfil) && u.ativo
+      );
       if (plannersCadastrados.length === 0) {
         container.innerHTML = '<p class="text-xs text-slate-400">Nenhum planner ativo cadastrado.</p>';
         return;
@@ -597,7 +661,7 @@
         label.className = 'flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer';
         label.innerHTML = `
           <input type="checkbox" value="${p.login.toLowerCase()}" ${isChecked ? 'checked' : ''} class="w-4 h-4 accent-emerald-600 rounded planner-check">
-          ${p.login}
+          ${p.login} <span class="text-[10px] text-slate-400">(${obterNomePerfil(p.perfil)})</span>
         `;
         container.appendChild(label);
       });
@@ -620,9 +684,9 @@
       }
 
       const usuariosVinculados = usuarios.filter(u => 
-        (u.perfil === 'USER' || u.perfil === 'ADMIN' || u.perfil === 'TRIAL') && 
+        podeAcessarComprador(u) && 
         u.ativo && 
-        (usuarioLogado.perfil === 'ADMIN' || (u.vinculados || []).includes(meuLogin))
+        (usuarioLogado.perfil === 'ADMIN' || (u.vinculados || []).includes(meuLogin) || u.login.toLowerCase() === meuLogin)
       );
 
       if (usuariosVinculados.length === 0) {
@@ -633,19 +697,39 @@
       usuariosVinculados.forEach(u => {
         const opt = document.createElement('option');
         opt.value = u.login.toLowerCase();
-        opt.innerText = u.login;
+        opt.innerText = u.login.toLowerCase() === meuLogin ? `${u.login} (Você)` : u.login;
         select.appendChild(opt);
       });
       if (valorAtual) select.value = valorAtual;
+    }
+
+    function obterListasCriadasPeloUsuario() {
+      const meuLogin = (usuarioLogado?.login || '').toLowerCase();
+      const meusItensPlanner = itens.filter(i => i.planner_nome.toLowerCase() === meuLogin);
+      // Identifica listas únicas pelo par comprador + nome_lista
+      const chavesUnicas = new Set(
+        meusItensPlanner.map(i => `${i.comprador}::${(i.nome_lista || 'Lista Principal').trim().toLowerCase()}`)
+      );
+      return chavesUnicas;
     }
 
     function sincronizarListasPlanner() {
       const comprador = document.getElementById('plan-comprador-alvo')?.value;
       const selectExistente = document.getElementById('plan-lista-existente');
       const inputNome = document.getElementById('plan-nome-lista');
+      const badgeLimite = document.getElementById('plan-limite-badge');
       if (!selectExistente || !inputNome) return;
 
       const meuLogin = (usuarioLogado?.login || '').toLowerCase();
+      const limite = obterLimiteListas(usuarioLogado);
+      const listasTotaisCriadas = obterListasCriadasPeloUsuario();
+
+      if (badgeLimite) {
+        badgeLimite.innerText = limite === Infinity
+          ? 'Listas: Ilimitadas'
+          : `Listas: ${listasTotaisCriadas.size}/${limite}`;
+      }
+
       const itensDoPlannerParaComprador = itens.filter(i =>
         i.comprador === comprador &&
         (!meuLogin || i.planner_nome.toLowerCase() === meuLogin || usuarioLogado.perfil === 'ADMIN')
@@ -654,7 +738,12 @@
       const nomesUnicos = [...new Set(itensDoPlannerParaComprador.map(i => i.nome_lista || 'Lista Principal'))];
       const nomeDigitado = inputNome.value.trim();
 
-      selectExistente.innerHTML = '<option value="">-- Nova Lista --</option>';
+      // Se atingiu o limite de listas e não é ADMIN, oculta "-- Nova Lista --" quando já houver lista existente
+      const atingiuLimite = limite !== Infinity && listasTotaisCriadas.size >= limite;
+      selectExistente.innerHTML = atingiuLimite && nomesUnicos.length > 0
+        ? ''
+        : '<option value="">-- Nova Lista --</option>';
+
       nomesUnicos.forEach(nome => {
         const opt = document.createElement('option');
         opt.value = nome;
@@ -664,11 +753,20 @@
 
       if (nomeDigitado && nomesUnicos.includes(nomeDigitado)) {
         selectExistente.value = nomeDigitado;
-      } else if (!nomeDigitado && nomesUnicos.length > 0) {
+      } else if (nomesUnicos.length > 0 && (!nomeDigitado || atingiuLimite)) {
         selectExistente.value = nomesUnicos[0];
         inputNome.value = nomesUnicos[0];
       } else if (!nomeDigitado) {
         inputNome.value = 'Lista Principal';
+      }
+
+      // Bloqueia edição do nome para criar nova lista se atingiu o limite de 1 lista (PLANNER PADRÃO / TRIAL)
+      if (limite === 1 && atingiuLimite) {
+        inputNome.readOnly = true;
+        inputNome.classList.add('bg-slate-200', 'text-slate-500');
+      } else {
+        inputNome.readOnly = false;
+        inputNome.classList.remove('bg-slate-200', 'text-slate-500');
       }
 
       atualizarCheckboxStatusListaPlanner();
@@ -787,18 +885,34 @@
     }
 
     // ADMIN
+    function aoMudarPerfilAdmin() {
+      const perfil = document.getElementById('adm-perfil').value;
+      const chkComprador = document.getElementById('adm-acesso-comprador');
+      // Perfis que já incluem acesso de comprador nativamente
+      if (['USER', 'PLANNER_PRO', 'TRIAL', 'ADMIN'].includes(perfil)) {
+        chkComprador.checked = true;
+      } else {
+        chkComprador.checked = false;
+      }
+    }
+
     function renderizarAdmin() {
       if (usuarioLogado?.perfil !== 'ADMIN') return;
       const container = document.getElementById('lista-usuarios');
       if (!container) return;
       container.innerHTML = '';
       usuarios.forEach(u => {
+        const whatsFormatado = formatarTelefone(u.whatsapp) || '---';
+        const badgeExtra = (u.perfil === 'PLANNER_PADRAO' && u.acesso_comprador)
+          ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 font-bold ml-1">+ USER</span>'
+          : '';
+
         const div = document.createElement('div');
         div.className = 'py-2.5 flex justify-between items-center';
         div.innerHTML = `
           <div>
-            <p class="font-bold text-sm text-slate-800">${u.login} <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">${u.perfil}</span></p>
-            <p class="text-xs text-slate-400">Whats: ${u.whatsapp || '---'} • Vigência: <b>${formatarDataBR(u.vigencia)}</b> • ${u.ativo ? '<span class="text-emerald-600 font-bold">Ativo</span>' : '<span class="text-red-500 font-bold">Bloqueado</span>'}</p>
+            <p class="font-bold text-sm text-slate-800">${u.login} <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">${obterNomePerfil(u.perfil)}</span>${badgeExtra}</p>
+            <p class="text-xs text-slate-400">Whats: <b>${whatsFormatado}</b> • Vigência: <b>${formatarDataBR(u.vigencia)}</b> • ${u.ativo ? '<span class="text-emerald-600 font-bold">Ativo</span>' : '<span class="text-red-500 font-bold">Bloqueado</span>'}</p>
           </div>
           <button onclick='preencherFormAdmin(${JSON.stringify(u)})' class="text-xs bg-slate-100 px-3 py-1.5 rounded-lg font-semibold text-slate-700">Editar</button>
         `;
@@ -811,8 +925,9 @@
       document.getElementById('adm-id').value = u.id;
       document.getElementById('adm-login').value = u.login;
       document.getElementById('adm-perfil').value = u.perfil;
-      document.getElementById('adm-whats').value = u.whatsapp || '';
+      document.getElementById('adm-whats').value = formatarTelefone(u.whatsapp || '');
       document.getElementById('adm-vigencia').value = u.vigencia || '';
+      document.getElementById('adm-acesso-comprador').checked = podeAcessarComprador(u);
       document.getElementById('adm-ativo').checked = u.ativo;
       atualizarCheckboxesPlanners(u.vinculados || []);
     }
@@ -825,6 +940,8 @@
       const checkboxes = document.querySelectorAll('.planner-check:checked');
       const vinculadosArr = Array.from(checkboxes).map(cb => cb.value);
       const vigenciaVal = document.getElementById('adm-vigencia').value || null;
+      const perfilSelecionado = document.getElementById('adm-perfil').value;
+      const acessoComprador = document.getElementById('adm-acesso-comprador').checked;
 
       let ativoVal = document.getElementById('adm-ativo').checked;
       if (vigenciaVal) {
@@ -833,7 +950,8 @@
       }
 
       const { error } = await sb.from('perfis').update({
-        perfil: document.getElementById('adm-perfil').value,
+        perfil: perfilSelecionado,
+        acesso_comprador: acessoComprador,
         whatsapp: document.getElementById('adm-whats').value.replace(/\D/g, ''),
         vinculados: vinculadosArr,
         vigencia: vigenciaVal,
@@ -846,6 +964,7 @@
       document.getElementById('adm-login').value = '';
       document.getElementById('adm-whats').value = '';
       document.getElementById('adm-vigencia').value = '';
+      document.getElementById('adm-acesso-comprador').checked = false;
       atualizarCheckboxesPlanners();
       carregarDados(true);
     }
@@ -862,6 +981,16 @@
       const valor = lerMoeda(document.getElementById('plan-valor').value);
 
       if (!produto) return alert('Digite o nome do produto.');
+
+      // Validação de limite de listas por perfil
+      const limite = obterLimiteListas(usuarioLogado);
+      if (limite !== Infinity) {
+        const listasExistentes = obterListasCriadasPeloUsuario();
+        const chaveNovaLista = `${compradorAlvo}::${nomeLista.toLowerCase()}`;
+        if (!listasExistentes.has(chaveNovaLista) && listasExistentes.size >= limite) {
+          return alert(`Seu perfil (${obterNomePerfil(usuarioLogado.perfil)}) permite criar no máximo ${limite} lista(s).`);
+        }
+      }
 
       const novoItem = {
         id: Date.now().toString(),
@@ -1119,12 +1248,14 @@
       }
       if (!fone) return alert('O Planner não possui WhatsApp cadastrado.');
 
+      const foneLimpo = String(fone).replace(/\D/g, '');
+      const foneComDDI = foneLimpo.length <= 11 ? `55${foneLimpo}` : foneLimpo;
       const mensagem = `não encontrei o produto ${item.produto}, pode me mandar uma foto?`;
-      window.open(`https://wa.me/${fone}?text=${encodeURIComponent(mensagem)}`, '_blank');
+      window.open(`https://wa.me/${foneComDDI}?text=${encodeURIComponent(mensagem)}`, '_blank');
     }
 
     function atualizarTotais() {
-      if (!usuarioLogado || (usuarioLogado.perfil !== 'USER' && usuarioLogado.perfil !== 'TRIAL' && usuarioLogado.perfil !== 'ADMIN')) {
+      if (!usuarioLogado || !podeAcessarComprador(usuarioLogado)) {
         document.getElementById('total-estimado').innerText = 'R$ 0,00';
         document.getElementById('total-real').innerText = 'R$ 0,00';
         return;
@@ -1152,6 +1283,27 @@
 
       document.getElementById('total-estimado').innerText = formatarMoeda(totalEstimado);
       document.getElementById('total-real').innerText = formatarMoeda(totalReal);
+    }
+
+    // Formatação de Telefone (##) #####-####
+    function formatarTelefone(valor) {
+      if (!valor) return '';
+      let digits = String(valor).replace(/\D/g, '');
+      // Remove DDI 55 caso venha salvo com 12 ou 13 dígitos
+      if (digits.length > 11 && digits.startsWith('55')) {
+        digits = digits.slice(2);
+      }
+      digits = digits.slice(0, 11);
+
+      if (digits.length === 0) return '';
+      if (digits.length <= 2) return `(${digits}`;
+      if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+      if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    }
+
+    function mascaraTelefone(input) {
+      input.value = formatarTelefone(input.value);
     }
 
     function mascaraMoeda(input) {

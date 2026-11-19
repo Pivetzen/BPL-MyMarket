@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>BPL - MyMarket</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <style>
     body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
@@ -12,26 +13,60 @@
 </head>
 <body class="bg-slate-100 text-slate-800 pb-32 select-none">
 
-  <!-- TELA DE LOGIN -->
+  <!-- TELA DE LOGIN / CADASTRO -->
   <div id="screen-login" class="min-h-screen flex flex-col justify-center p-5 max-w-md mx-auto">
     <div class="bg-white rounded-3xl shadow-md p-6 border border-slate-200">
       <div class="w-14 h-14 bg-emerald-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl">
         <i class="fa-solid fa-cart-shopping"></i>
       </div>
       <h1 class="text-xl font-bold text-center text-slate-900">BPL - MyMarket</h1>
-      <p class="text-xs text-center text-slate-500 mb-6">Acesso Restrito</p>
+      <p class="text-xs text-center text-slate-500 mb-5">Gestão inteligente de compras</p>
 
-      <div class="space-y-3">
+      <!-- Abas Login / Cadastro -->
+      <div class="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl mb-5">
+        <button onclick="alternarTelaAuth('login')" id="tab-auth-login" class="py-2 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition">
+          Entrar
+        </button>
+        <button onclick="alternarTelaAuth('cadastro')" id="tab-auth-cadastro" class="py-2 rounded-lg text-xs font-bold text-slate-500 transition">
+          Criar Conta (5 dias grátis)
+        </button>
+      </div>
+
+      <!-- FORMULÁRIO LOGIN -->
+      <div id="form-login" class="space-y-3">
         <div>
-          <label class="text-xs font-bold text-slate-600 block mb-1">Usuário</label>
-          <input type="text" id="login-user" placeholder="Ex: matheus" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600">
+          <label class="text-xs font-bold text-slate-600 block mb-1">E-mail ou Usuário</label>
+          <input type="text" id="login-user" placeholder="seu@email.com ou matheus" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600">
         </div>
         <div>
           <label class="text-xs font-bold text-slate-600 block mb-1">Senha</label>
-          <input type="password" id="login-pass" placeholder="••••" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600">
+          <input type="password" id="login-pass" placeholder="••••••" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600">
         </div>
         <button onclick="fazerLogin()" id="btn-login" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-sm active:scale-95 transition mt-2">
           Entrar
+        </button>
+      </div>
+
+      <!-- FORMULÁRIO CADASTRO (TRIAL 5 DIAS) -->
+      <div id="form-cadastro" class="hidden space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-600 block mb-1">Nome de Usuário (único)</label>
+          <input type="text" id="cad-login" placeholder="Ex: joaosilva" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-600">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-600 block mb-1">E-mail</label>
+          <input type="email" id="cad-email" placeholder="seu@email.com" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-600">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-600 block mb-1">WhatsApp (com DDD)</label>
+          <input type="tel" id="cad-whats" placeholder="Ex: 85999999999" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-600">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-600 block mb-1">Senha (mín. 6 caracteres)</label>
+          <input type="password" id="cad-pass" placeholder="••••••" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-600">
+        </div>
+        <button onclick="fazerCadastro()" id="btn-cadastro" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl shadow-sm active:scale-95 transition mt-2">
+          Começar Teste Grátis (5 Dias)
         </button>
       </div>
     </div>
@@ -61,6 +96,7 @@
         </div>
       </div>
 
+      <!-- Abas para ADMIN ou TRIAL (para testar as visões) -->
       <div id="admin-tabs" class="hidden grid grid-cols-3 gap-1.5 mt-3 pt-3 border-t border-slate-800">
         <button onclick="mudarAbaAdmin('USER')" id="tab-USER" class="py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white">Comprador</button>
         <button onclick="mudarAbaAdmin('PLANNER')" id="tab-PLANNER" class="py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300">Planner</button>
@@ -71,22 +107,19 @@
     <!-- ADMIN -->
     <section id="view-ADMIN" class="hidden p-4 space-y-4">
       <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-        <h2 class="font-bold text-sm text-slate-800 mb-3"><i class="fa-solid fa-user-plus text-emerald-600 mr-1"></i> Cadastrar / Editar Usuário</h2>
+        <h2 class="font-bold text-sm text-slate-800 mb-3"><i class="fa-solid fa-user-gear text-emerald-600 mr-1"></i> Editar Perfil de Usuário</h2>
+        <input type="hidden" id="adm-id">
         <div class="grid grid-cols-2 gap-2.5 mb-2.5">
-          <input type="text" id="adm-login" placeholder="Usuário (ex: rayssa)" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
-          <input type="text" id="adm-senha" placeholder="Senha" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
-        </div>
-        <div class="grid grid-cols-2 gap-2.5 mb-2.5">
+          <input type="text" id="adm-login" placeholder="Usuário" readonly class="bg-slate-200 text-slate-600 rounded-xl px-3 py-2.5 text-sm cursor-not-allowed">
           <select id="adm-perfil" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm font-semibold">
+            <option value="TRIAL">TRIAL (Teste 5d)</option>
             <option value="USER">USER (Comprador)</option>
             <option value="PLANNER">PLANNER (Criador)</option>
             <option value="ADMIN">ADMIN (Total)</option>
           </select>
-          <input type="tel" id="adm-whats" placeholder="WhatsApp (55859...)" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
         </div>
-
-        <div class="mb-2.5">
-          <label class="text-[11px] font-bold text-slate-500 block mb-1">Data de Vigência do Plano:</label>
+        <div class="grid grid-cols-2 gap-2.5 mb-2.5">
+          <input type="tel" id="adm-whats" placeholder="WhatsApp (55859...)" class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm">
           <input type="date" id="adm-vigencia" class="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700">
         </div>
         
@@ -99,7 +132,7 @@
           <label class="flex items-center gap-2 text-xs font-semibold text-slate-700">
             <input type="checkbox" id="adm-ativo" checked class="w-4 h-4 accent-emerald-600"> Acesso Liberado
           </label>
-          <button onclick="salvarUsuario()" class="bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl active:scale-95">Salvar</button>
+          <button onclick="salvarUsuario()" class="bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl active:scale-95">Atualizar Usuário</button>
         </div>
       </div>
       <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
@@ -111,11 +144,11 @@
     <!-- PLANNER -->
     <section id="view-PLANNER" class="hidden p-4 space-y-4">
       <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-        <h2 class="font-bold text-sm text-slate-800 mb-3"><i class="fa-solid fa-pen-to-square text-emerald-600 mr-1"></i> Criar Item para Comprador Vinculado</h2>
+        <h2 class="font-bold text-sm text-slate-800 mb-3"><i class="fa-solid fa-pen-to-square text-emerald-600 mr-1"></i> Criar Item na Lista</h2>
         
         <div class="space-y-3">
           <div>
-            <label class="text-[11px] font-bold text-slate-500 block mb-1">Selecionar Comprador (Vinculado a você):</label>
+            <label class="text-[11px] font-bold text-slate-500 block mb-1">Selecionar Comprador:</label>
             <select id="plan-comprador-alvo" onchange="sincronizarListasPlanner()" class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"></select>
           </div>
 
@@ -176,9 +209,7 @@
         <label for="user-seletor-lista" class="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1.5">
           Selecionar Lista Ativa para Visualizar:
         </label>
-        <select id="user-seletor-lista" onchange="renderizarUser(); atualizarTotais();" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:outline-none focus:border-emerald-600">
-          <!-- Preenchido via JS apenas com listas ativas -->
-        </select>
+        <select id="user-seletor-lista" onchange="renderizarUser(); atualizarTotais();" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:outline-none focus:border-emerald-600"></select>
       </div>
 
       <div>
@@ -251,7 +282,13 @@
   </div>
 
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyTwX-ffOMTcifI5ODPkOcUK3oT5SUu_nCbk6qOjshmwcnd6vxM_MeIknWS5EbnYeLj/exec';
+    // ==========================================
+    // CONFIGURAÇÃO DO SUPABASE (PREENCHA AQUI)
+    // ==========================================
+    const SUPABASE_URL = 'https://dhokhfxswivuzfcdeoru.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_ItkigrUMm355CJJAt1-SMQ_IdWp9Drk';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     const WHATSAPP_RENOVACAO = '';
 
     let usuarioLogado = null;
@@ -259,43 +296,120 @@
     let usuarios = [];
     let itemAtualModal = null;
 
-    window.onload = () => {
-      const saved = localStorage.getItem('mercado_user_session');
-      if (saved) {
-        usuarioLogado = JSON.parse(saved);
-        iniciarInterface();
+    window.onload = async () => {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) {
+        await carregarPerfilSessao(session.user.id);
       }
     };
 
+    function alternarTelaAuth(aba) {
+      const isLogin = aba === 'login';
+      document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+      document.getElementById('form-cadastro').classList.toggle('hidden', isLogin);
+      
+      document.getElementById('tab-auth-login').className = isLogin
+        ? 'py-2 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition'
+        : 'py-2 rounded-lg text-xs font-bold text-slate-500 transition';
+      document.getElementById('tab-auth-cadastro').className = !isLogin
+        ? 'py-2 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition'
+        : 'py-2 rounded-lg text-xs font-bold text-slate-500 transition';
+    }
+
+    async function fazerCadastro() {
+      const login = document.getElementById('cad-login').value.trim().toLowerCase().replace(/\s+/g, '');
+      const email = document.getElementById('cad-email').value.trim().toLowerCase();
+      const whatsapp = document.getElementById('cad-whats').value.replace(/\D/g, '');
+      const password = document.getElementById('cad-pass').value;
+
+      if (!login || !email || !password) return alert('Preencha usuário, e-mail e senha.');
+      if (password.length < 6) return alert('A senha deve ter no mínimo 6 caracteres.');
+
+      const btn = document.getElementById('btn-cadastro');
+      btn.innerText = 'Criando conta...';
+      btn.disabled = true;
+
+      try {
+        // Verifica se o nome de usuário já existe
+        const { data: existente } = await sb.from('perfis').select('login').eq('login', login).maybeSingle();
+        if (existente) {
+          alert('Este nome de usuário já está em uso. Escolha outro.');
+          return;
+        }
+
+        const { data, error } = await sb.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { login, whatsapp }
+          }
+        });
+
+        if (error) throw error;
+
+        if (data.user) {
+          alert('Conta criada com sucesso! Você ganhou 5 dias de acesso TRIAL.');
+          await carregarPerfilSessao(data.user.id);
+        }
+      } catch (e) {
+        alert('Erro ao cadastrar: ' + e.message);
+      } finally {
+        btn.innerText = 'Começar Teste Grátis (5 Dias)';
+        btn.disabled = false;
+      }
+    }
+
     async function fazerLogin() {
-      const login = document.getElementById('login-user').value.trim();
-      const senha = document.getElementById('login-pass').value.trim();
-      if (!login || !senha) return alert('Preencha usuário e senha.');
+      let identificador = document.getElementById('login-user').value.trim().toLowerCase();
+      const password = document.getElementById('login-pass').value;
+      if (!identificador || !password) return alert('Preencha usuário/e-mail e senha.');
 
       const btn = document.getElementById('btn-login');
       btn.innerText = 'Verificando...';
       btn.disabled = true;
 
       try {
-        const res = await fetch(`${API_URL}?action=login&login=${encodeURIComponent(login)}&senha=${encodeURIComponent(senha)}`);
-        const data = await res.json();
-        if (data.status === 'ok') {
-          usuarioLogado = data.user;
-          localStorage.setItem('mercado_user_session', JSON.stringify(usuarioLogado));
-          iniciarInterface();
-        } else {
-          alert(data.message);
+        // Se não digitou '@', busca o e-mail correspondente ao login
+        if (!identificador.includes('@')) {
+          const { data: perfilBusca } = await sb.from('perfis').select('email').eq('login', identificador).maybeSingle();
+          if (!perfilBusca) throw new Error('Usuário não encontrado.');
+          identificador = perfilBusca.email;
         }
+
+        const { data, error } = await sb.auth.signInWithPassword({
+          email: identificador,
+          password
+        });
+
+        if (error) throw new Error('Usuário ou senha inválidos.');
+        await carregarPerfilSessao(data.user.id);
       } catch (e) {
-        alert('Erro de conexão com a planilha.');
+        alert(e.message);
       } finally {
         btn.innerText = 'Entrar';
         btn.disabled = false;
       }
     }
 
-    function logout() {
-      localStorage.removeItem('mercado_user_session');
+    async function carregarPerfilSessao(userId) {
+      const { data: perfil, error } = await sb.from('perfis').select('*').eq('id', userId).single();
+      if (error || !perfil) {
+        await sb.auth.signOut();
+        return alert('Perfil não encontrado.');
+      }
+
+      const hojeStr = new Date().toISOString().split('T')[0];
+      if (!perfil.ativo || (perfil.vigencia && perfil.vigencia < hojeStr)) {
+        await sb.auth.signOut();
+        return alert('Acesso bloqueado (Período Trial/Plano vencido ou inativado).');
+      }
+
+      usuarioLogado = perfil;
+      iniciarInterface();
+    }
+
+    async function logout() {
+      await sb.auth.signOut();
       usuarioLogado = null;
       document.getElementById('screen-app').classList.add('hidden');
       document.getElementById('screen-login').classList.remove('hidden');
@@ -311,7 +425,14 @@
 
       if (usuarioLogado.perfil === 'ADMIN') {
         document.getElementById('admin-tabs').classList.remove('hidden');
+        document.getElementById('tab-ADMIN').classList.remove('hidden');
         mudarAbaAdmin('USER');
+      } else if (usuarioLogado.perfil === 'TRIAL') {
+        // No perfil TRIAL, o usuário pode testar tanto criar listas (PLANNER) quanto fazer compras (USER)
+        document.getElementById('admin-tabs').classList.remove('hidden');
+        document.getElementById('tab-ADMIN').classList.add('hidden');
+        document.getElementById('admin-tabs').classList.replace('grid-cols-3', 'grid-cols-2');
+        mudarAbaAdmin('PLANNER');
       } else {
         document.getElementById('admin-tabs').classList.add('hidden');
         exibirView(usuarioLogado.perfil);
@@ -337,25 +458,25 @@
       }
 
       const diffDays = calcularDiasRestantes(usuarioLogado.vigencia);
+      const tipoPlano = usuarioLogado.perfil === 'TRIAL' ? 'Período Trial' : 'Plano ativo';
 
       if (diffDays < 0) {
         subtitle.innerHTML = '<span class="text-red-400 font-bold">Plano Vencido</span>';
       } else if (diffDays === 0) {
         subtitle.innerHTML = '<span class="text-amber-400 font-bold">Vence hoje!</span>';
       } else {
-        subtitle.innerHTML = `Plano ativo: <b class="text-emerald-400">${diffDays} dia(s) restante(s)</b>`;
+        subtitle.innerHTML = `${tipoPlano}: <b class="text-emerald-400">${diffDays} dia(s) restante(s)</b>`;
       }
     }
 
     function renovarPlanoWhatsApp() {
       if (!usuarioLogado) return;
-
       const nomeUsuario = usuarioLogado.login;
       const perfilUsuario = usuarioLogado.perfil;
       const dataVigenciaTexto = usuarioLogado.vigencia ? formatarDataBR(usuarioLogado.vigencia) : 'sem data definida';
       const diasRestantes = usuarioLogado.vigencia ? Math.max(0, calcularDiasRestantes(usuarioLogado.vigencia)) : 'ilimitados';
 
-      const mensagem = `Olá, sou ${nomeUsuario} - ${perfilUsuario}!\n\nGostaria de renovar meu plano no BPL - MyMarket, que irá expirar no dia ${dataVigenciaTexto}, em ${diasRestantes} dias!`;
+      const mensagem = `Olá, sou ${nomeUsuario} (${perfilUsuario})!\n\nGostaria de ativar/renovar meu plano no BPL - MyMarket, que expira em ${dataVigenciaTexto} (${diasRestantes} dias)!`;
 
       let foneDestino = (WHATSAPP_RENOVACAO || '').replace(/\D/g, '');
       if (!foneDestino && Array.isArray(usuarios)) {
@@ -380,9 +501,11 @@
     function mudarAbaAdmin(aba) {
       ['USER', 'PLANNER', 'ADMIN'].forEach(t => {
         const btn = document.getElementById(`tab-${t}`);
-        btn.className = t === aba
-          ? 'py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white'
-          : 'py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300';
+        if (btn) {
+          btn.className = t === aba
+            ? 'py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white'
+            : 'py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300';
+        }
       });
       exibirView(aba);
     }
@@ -393,7 +516,7 @@
       document.getElementById('view-USER').classList.add('hidden');
 
       document.getElementById(`view-${perfil}`).classList.remove('hidden');
-      document.getElementById('footer-totais').classList.toggle('hidden', perfil === 'ADMIN');
+      document.getElementById('footer-totais').classList.toggle('hidden', perfil !== 'USER');
     }
 
     async function carregarDados(animar = false) {
@@ -401,33 +524,31 @@
       if (animar) icon.classList.add('fa-spin');
 
       try {
-        const res = await fetch(`${API_URL}?action=get_all`);
-        const data = await res.json();
-        if (data.status === 'ok') {
-          itens = data.itens;
-          usuarios = data.usuarios;
+        const [{ data: dadosItens }, { data: dadosPerfis }] = await Promise.all([
+          sb.from('itens').select('*'),
+          sb.from('perfis').select('*')
+        ]);
 
-          if (usuarioLogado) {
-            const atualizado = usuarios.find(u => u.login.toLowerCase() === usuarioLogado.login.toLowerCase());
-            if (atualizado) {
-              if (!atualizado.ativo) {
-                alert('Seu plano venceu ou seu acesso foi bloqueado.');
-                logout();
-                return;
-              }
-              usuarioLogado.vigencia = atualizado.vigencia;
-              usuarioLogado.vinculados = atualizado.vinculados;
-              localStorage.setItem('mercado_user_session', JSON.stringify(usuarioLogado));
-              atualizarCabecalhoVigencia();
-            }
+        itens = dadosItens || [];
+        usuarios = dadosPerfis || [];
+
+        const atualizado = usuarios.find(u => u.id === usuarioLogado.id);
+        if (atualizado) {
+          const hojeStr = new Date().toISOString().split('T')[0];
+          if (!atualizado.ativo || (atualizado.vigencia && atualizado.vigencia < hojeStr)) {
+            alert('Seu plano venceu ou seu acesso foi bloqueado.');
+            logout();
+            return;
           }
-
-          atualizarCheckboxesPlanners();
-          atualizarSelectCompradores();
-          sincronizarListasPlanner();
-          atualizarSeletorListasUser();
-          renderizarTudo();
+          usuarioLogado = atualizado;
+          atualizarCabecalhoVigencia();
         }
+
+        atualizarCheckboxesPlanners();
+        atualizarSelectCompradores();
+        sincronizarListasPlanner();
+        atualizarSeletorListasUser();
+        renderizarTudo();
       } catch (e) {
         console.error(e);
       } finally {
@@ -440,14 +561,14 @@
       if (!container) return;
       container.innerHTML = '';
 
-      const plannersCadastrados = usuarios.filter(u => u.perfil === 'PLANNER' && u.ativo);
+      const plannersCadastrados = usuarios.filter(u => (u.perfil === 'PLANNER' || u.perfil === 'ADMIN') && u.ativo);
       if (plannersCadastrados.length === 0) {
         container.innerHTML = '<p class="text-xs text-slate-400">Nenhum planner ativo cadastrado.</p>';
         return;
       }
 
       plannersCadastrados.forEach(p => {
-        const isChecked = vinculadosAtuais.includes(p.login.toLowerCase());
+        const isChecked = (vinculadosAtuais || []).includes(p.login.toLowerCase());
         const label = document.createElement('label');
         label.className = 'flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer';
         label.innerHTML = `
@@ -465,10 +586,20 @@
       select.innerHTML = '';
       
       const meuLogin = usuarioLogado.login.toLowerCase();
+
+      // Se for TRIAL, o comprador alvo é ele mesmo (para testar o fluxo completo)
+      if (usuarioLogado.perfil === 'TRIAL') {
+        const opt = document.createElement('option');
+        opt.value = meuLogin;
+        opt.innerText = `${usuarioLogado.login} (Você - Modo Trial)`;
+        select.appendChild(opt);
+        return;
+      }
+
       const usuariosVinculados = usuarios.filter(u => 
-        u.perfil === 'USER' && 
+        (u.perfil === 'USER' || u.perfil === 'ADMIN') && 
         u.ativo && 
-        u.vinculados.includes(meuLogin)
+        (usuarioLogado.perfil === 'ADMIN' || (u.vinculados || []).includes(meuLogin))
       );
 
       if (usuariosVinculados.length === 0) {
@@ -583,16 +714,11 @@
       atualizarSeletorListasUser();
       renderizarTudo();
 
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'toggle_lista_ativa',
-          comprador: comprador,
-          nome_lista: nomeLista,
-          planner_nome: usuarioLogado.perfil === 'ADMIN' ? '' : usuarioLogado.login,
-          lista_ativa: ativa
-        })
-      });
+      let query = sb.from('itens').update({ lista_ativa: ativa }).eq('comprador', comprador).ilike('nome_lista', nomeLista);
+      if (usuarioLogado.perfil !== 'ADMIN') {
+        query = query.ilike('planner_nome', usuarioLogado.login);
+      }
+      await query;
     }
 
     function atualizarSeletorListasUser() {
@@ -602,7 +728,6 @@
       const meuLogin = usuarioLogado.login.toLowerCase();
       const valorAnterior = select.value;
 
-      // Apenas itens do comprador cuja lista esteja ativa
       const itensAtivosComprador = itens.filter(i => i.comprador === meuLogin && i.lista_ativa !== false);
       const listasAtivas = [...new Set(itensAtivosComprador.map(i => i.nome_lista || 'Lista Principal'))];
 
@@ -639,6 +764,7 @@
     // ADMIN
     function renderizarAdmin() {
       const container = document.getElementById('lista-usuarios');
+      if (!container) return;
       container.innerHTML = '';
       usuarios.forEach(u => {
         const div = document.createElement('div');
@@ -655,44 +781,41 @@
     }
 
     function preencherFormAdmin(u) {
+      document.getElementById('adm-id').value = u.id;
       document.getElementById('adm-login').value = u.login;
-      document.getElementById('adm-senha').value = u.senha;
       document.getElementById('adm-perfil').value = u.perfil;
-      document.getElementById('adm-whats').value = u.whatsapp;
+      document.getElementById('adm-whats').value = u.whatsapp || '';
       document.getElementById('adm-vigencia').value = u.vigencia || '';
       document.getElementById('adm-ativo').checked = u.ativo;
-      atualizarCheckboxesPlanners(u.vinculados);
+      atualizarCheckboxesPlanners(u.vinculados || []);
     }
 
     async function salvarUsuario() {
+      const id = document.getElementById('adm-id').value;
+      if (!id) return alert('Clique em "Editar" em um usuário da lista abaixo primeiro.');
+
       const checkboxes = document.querySelectorAll('.planner-check:checked');
       const vinculadosArr = Array.from(checkboxes).map(cb => cb.value);
-      const vigenciaVal = document.getElementById('adm-vigencia').value;
+      const vigenciaVal = document.getElementById('adm-vigencia').value || null;
 
       let ativoVal = document.getElementById('adm-ativo').checked;
       if (vigenciaVal) {
-        const hoje = new Date();
-        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-        if (vigenciaVal < hojeStr) {
-          ativoVal = false;
-        }
+        const hojeStr = new Date().toISOString().split('T')[0];
+        if (vigenciaVal < hojeStr) ativoVal = false;
       }
 
-      const payload = {
-        action: 'save_user',
-        login: document.getElementById('adm-login').value.trim(),
-        senha: document.getElementById('adm-senha').value.trim(),
+      const { error } = await sb.from('perfis').update({
         perfil: document.getElementById('adm-perfil').value,
         whatsapp: document.getElementById('adm-whats').value.replace(/\D/g, ''),
-        vinculados: vinculadosArr.join(','),
+        vinculados: vinculadosArr,
         vigencia: vigenciaVal,
         ativo: ativoVal
-      };
-      if (!payload.login || !payload.senha) return alert('Informe usuário e senha.');
+      }).eq('id', id);
 
-      await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+      if (error) return alert('Erro ao atualizar usuário: ' + error.message);
+
+      document.getElementById('adm-id').value = '';
       document.getElementById('adm-login').value = '';
-      document.getElementById('adm-senha').value = '';
       document.getElementById('adm-whats').value = '';
       document.getElementById('adm-vigencia').value = '';
       atualizarCheckboxesPlanners();
@@ -702,7 +825,7 @@
     // PLANNER
     async function adicionarItemPlanner() {
       const compradorAlvo = document.getElementById('plan-comprador-alvo').value;
-      if (!compradorAlvo) return alert('Selecione um comprador válido vinculado a você.');
+      if (!compradorAlvo) return alert('Selecione um comprador válido.');
 
       const nomeLista = (document.getElementById('plan-nome-lista').value || 'Lista Principal').trim();
       const listaAtiva = document.getElementById('plan-lista-ativa').checked;
@@ -713,11 +836,13 @@
       if (!produto) return alert('Digite o nome do produto.');
 
       const novoItem = {
-        action: 'add_item',
         id: Date.now().toString(),
         produto,
         qtd_planejada: qtd,
         valor_estimado: valor,
+        qtd_comprada: 0,
+        preco_real: 0,
+        status: 'PENDENTE',
         planner_whatsapp: usuarioLogado.whatsapp || '',
         planner_nome: usuarioLogado.login,
         comprador: compradorAlvo,
@@ -725,7 +850,7 @@
         lista_ativa: listaAtiva
       };
 
-      itens.push({ ...novoItem, status: 'PENDENTE', qtd_comprada: 0, preco_real: 0 });
+      itens.push(novoItem);
       document.getElementById('plan-produto').value = '';
       document.getElementById('plan-qtd').value = 1;
       document.getElementById('plan-valor').value = '';
@@ -733,7 +858,8 @@
       atualizarSeletorListasUser();
       renderizarTudo();
 
-      await fetch(API_URL, { method: 'POST', body: JSON.stringify(novoItem) });
+      const { error } = await sb.from('itens').insert(novoItem);
+      if (error) alert('Erro ao salvar item: ' + error.message);
     }
 
     function renderizarPlanner() {
@@ -754,7 +880,7 @@
       document.getElementById('plan-count').innerText = itensDaLista.length;
 
       if (!compradorSelecionado || itensDaLista.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-400 bg-white p-4 rounded-xl text-center">Nenhum item criado nesta lista para este comprador.</p>';
+        container.innerHTML = '<p class="text-xs text-slate-400 bg-white p-4 rounded-xl text-center">Nenhum item criado nesta lista.</p>';
         return;
       }
 
@@ -779,14 +905,14 @@
       sincronizarListasPlanner();
       atualizarSeletorListasUser();
       renderizarTudo();
-      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_item', id }) });
+      await sb.from('itens').delete().eq('id', id);
     }
 
     async function limparListaPlanner() {
       const compradorSelecionado = document.getElementById('plan-comprador-alvo').value;
       const nomeListaSelecionada = (document.getElementById('plan-nome-lista').value || 'Lista Principal').trim();
       if (!compradorSelecionado) return;
-      if (!confirm(`Zerar a lista "${nomeListaSelecionada}" destinada ao usuário ${compradorSelecionado}?`)) return;
+      if (!confirm(`Zerar a lista "${nomeListaSelecionada}"?`)) return;
 
       const meuLogin = (usuarioLogado?.login || '').toLowerCase();
       itens = itens.filter(i => !(
@@ -797,10 +923,8 @@
       sincronizarListasPlanner();
       atualizarSeletorListasUser();
       renderizarTudo();
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'limpar_lista', comprador: compradorSelecionado, nome_lista: nomeListaSelecionada })
-      });
+
+      await sb.from('itens').delete().eq('comprador', compradorSelecionado).ilike('nome_lista', nomeListaSelecionada);
     }
 
     // USER (COMPRADOR)
@@ -919,10 +1043,12 @@
       fecharModal();
       renderizarTudo();
 
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'update_item_status', id, status: 'CONFIRMADO', qtd_comprada: qtd, preco_real: preco })
-      });
+      await sb.from('itens').update({
+        status: 'CONFIRMADO',
+        qtd_comprada: qtd,
+        preco_real: preco,
+        atualizado_em: new Date().toISOString()
+      }).eq('id', id);
     }
 
     async function marcarFaltando(id) {
@@ -933,10 +1059,12 @@
       item.preco_real = 0;
       renderizarTudo();
 
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'update_item_status', id, status: 'FALTANDO', qtd_comprada: 0, preco_real: 0 })
-      });
+      await sb.from('itens').update({
+        status: 'FALTANDO',
+        qtd_comprada: 0,
+        preco_real: 0,
+        atualizado_em: new Date().toISOString()
+      }).eq('id', id);
     }
 
     async function voltarParaPendente(id) {
@@ -947,10 +1075,12 @@
       item.preco_real = 0;
       renderizarTudo();
 
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'update_item_status', id, status: 'PENDENTE', qtd_comprada: 0, preco_real: 0 })
-      });
+      await sb.from('itens').update({
+        status: 'PENDENTE',
+        qtd_comprada: 0,
+        preco_real: 0,
+        atualizado_em: new Date().toISOString()
+      }).eq('id', id);
     }
 
     function pedirFotoWhatsApp(item) {
@@ -966,7 +1096,7 @@
     }
 
     function atualizarTotais() {
-      if (!usuarioLogado || usuarioLogado.perfil !== 'USER') {
+      if (!usuarioLogado || (usuarioLogado.perfil !== 'USER' && usuarioLogado.perfil !== 'TRIAL')) {
         document.getElementById('total-estimado').innerText = 'R$ 0,00';
         document.getElementById('total-real').innerText = 'R$ 0,00';
         return;
